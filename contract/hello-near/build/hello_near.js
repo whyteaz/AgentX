@@ -2540,14 +2540,14 @@ let HelloNear = (_dec = NearBindgen({}), _dec2 = view(), _dec3 = call({}), _dec(
     return this.greeting;
   }
   // This method changes the state, for which it cost gas
-  set_greeting({
+  log_action({
     greeting
   }) {
     log(`Saving greeting ${greeting}`);
     this.greeting = greeting;
   }
-}, _applyDecoratedDescriptor(_class2.prototype, "get_greeting", [_dec2], Object.getOwnPropertyDescriptor(_class2.prototype, "get_greeting"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "set_greeting", [_dec3], Object.getOwnPropertyDescriptor(_class2.prototype, "set_greeting"), _class2.prototype), _class2)) || _class);
-function set_greeting() {
+}, _applyDecoratedDescriptor(_class2.prototype, "get_greeting", [_dec2], Object.getOwnPropertyDescriptor(_class2.prototype, "get_greeting"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "log_action", [_dec3], Object.getOwnPropertyDescriptor(_class2.prototype, "log_action"), _class2.prototype), _class2)) || _class);
+function log_action() {
   const _state = HelloNear._getState();
   if (!_state && HelloNear._requireInit()) {
     throw new Error("Contract must be initialized");
@@ -2557,7 +2557,7 @@ function set_greeting() {
     HelloNear._reconstruct(_contract, _state);
   }
   const _args = HelloNear._getArgs();
-  const _result = _contract.set_greeting(_args);
+  const _result = _contract.log_action(_args);
   HelloNear._saveToStorage(_contract);
   if (_result !== undefined) if (_result && _result.constructor && _result.constructor.name === "NearPromise") _result.onReturn();else env.value_return(HelloNear._serialize(_result, true));
 }
@@ -2575,5 +2575,5 @@ function get_greeting() {
   if (_result !== undefined) if (_result && _result.constructor && _result.constructor.name === "NearPromise") _result.onReturn();else env.value_return(HelloNear._serialize(_result, true));
 }
 
-export { get_greeting, set_greeting };
+export { get_greeting, log_action };
 //# sourceMappingURL=hello_near.js.map

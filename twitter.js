@@ -8,7 +8,12 @@ const twitterClient = new TwitterApi({
   accessSecret: process.env.TWITTER_ACCESS_SECRET,
 });
 
-// Function to post a tweet.
+// Utility to delay execution
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// Function to post a tweet (if needed)
 async function postTweet(status) {
   try {
     const response = await twitterClient.v2.tweet(status);
@@ -20,10 +25,9 @@ async function postTweet(status) {
   }
 }
 
-// Function to reply to a tweet.
+// Function to reply to a tweet given its tweetId
 async function replyTweet(tweetId, status) {
   try {
-    // Replying by posting a tweet with the 'in_reply_to_tweet_id' parameter.
     const response = await twitterClient.v2.tweet(status, { reply: { in_reply_to_tweet_id: tweetId } });
     console.log("Replied to tweet:", response);
     return response;
@@ -33,11 +37,39 @@ async function replyTweet(tweetId, status) {
   }
 }
 
-// Function to follow a user.
+// Function to fetch a tweet's details using its tweetId
+async function fetchTweet(tweetId, attempt = 1) {
+  try {
+    const tweet = await twitterClient.v2.singleTweet(tweetId);
+    console.log("Fetched tweet:", tweet);
+    return tweet.data;
+  } catch (error) {
+    // Check if error code 429 (rate limit) is returned
+    if (error.code === 429) {
+      const resetTime = parseInt(error.headers['x-rate-limit-reset']) * 1000; // convert to ms
+      const currentTime = Date.now();
+      const waitTime = resetTime - currentTime > 0 ? resetTime - currentTime : 60000; // default to 60s
+      
+      console.warn(`Rate limit hit. Waiting for ${waitTime / 1000} seconds before retrying...`);
+      await delay(waitTime);
+      
+      // Optionally, limit the number of retries (e.g., maximum 3 attempts)
+      if (attempt < 3) {
+        return fetchTweet(tweetId, attempt + 1);
+      } else {
+        throw new Error("Exceeded maximum retries for fetching tweet.");
+      }
+    } else {
+      console.error("Error fetching tweet:", error);
+      return null;
+    }
+  }
+}
+
+
+// Function to follow a user (if needed)
 async function followUser(userId) {
   try {
-    // Note: Following a user might require using v1.1 endpoints.
-    // Here, we simulate the follow action.
     console.log(`Simulated following user with ID: ${userId}`);
     return { success: true };
   } catch (error) {
@@ -46,4 +78,4 @@ async function followUser(userId) {
   }
 }
 
-module.exports = { postTweet, replyTweet, followUser };
+module.exports = { postTweet, replyTweet, followUser, fetchTweet };

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>AI Trolling Agent</title>
+    <!-- Import Inter font from Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="bg-gray-50 font-inter">
+    <div class="container mx-auto py-12 px-4">
+        <header class="text-center mb-12">
+            <h1 class="text-4xl font-bold text-blue-700">AI Trolling Agent</h1>
+            <p class="text-lg text-gray-600 mt-2">Empowering decentralized intelligence with a touch of humor</p>
+        </header>
+
+        <!-- Unique Selling Point Section -->
+        <section class="bg-white rounded-lg shadow p-8 mb-8">
+            <h2 class="text-2xl font-semibold text-blue-700 mb-4">Why We Deserve to Win</h2>
+            <p class="text-gray-700 leading-relaxed">
+                Our project uniquely merges AI, Web3, and decentralized autonomy to create an engaging and disruptive
+                user experience. By leveraging NEAR’s scalable blockchain, cutting-edge Google Gemini AI, and seamless
+                Twitter integration, we offer a truly user-owned solution that challenges centralized narratives. This
+                innovative blend not only pushes technological boundaries but also redefines online interaction—making
+                it a strong contender in the hackathon.
+            </p>
+        </section>
+
+        <!-- How It Works Section -->
+        <section class="bg-white rounded-lg shadow p-8 mb-8">
+            <h2 class="text-2xl font-semibold text-blue-700 mb-4">How It Works</h2>
+            <p class="text-gray-700 leading-relaxed">
+                Simply enter a tweet link below. Our AI agent fetches the tweet content, sends it to Google Gemini with
+                a prompt to generate a hilarious trolling response, replies to the tweet, and logs the interaction on
+                the NEAR blockchain.
+            </p>
+            <p class="mt-4 text-gray-700">
+                <strong>Note:</strong> You can only trigger this action once every 15 minutes.
+            </p>
+        </section>
+
+        <!-- Form Section -->
+        <section class="bg-white rounded-lg shadow p-8 mb-8">
+            <form id="tweetForm">
+                <div class="mb-4">
+                    <label for="tweetLink" class="block text-gray-700 font-medium mb-2">Tweet Link</label>
+                    <input type="text" id="tweetLink" name="tweetLink" class="input-field"
+                        placeholder="https://twitter.com/username/status/1234567890123456789" required>
+                </div>
+                <button type="submit" id="submitBtn"
+                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded disabled:opacity-50"
+                    disabled={false}>
+                    Submit
+                </button>
+                <div id="timer" class="mt-4 text-center text-red-600 font-semibold"></div>
+            </form>
+        </section>
+
+        <!-- Response Section -->
+        <section class="bg-white rounded-lg shadow p-8">
+            <h2 class="text-2xl font-semibold text-blue-700 mb-4">Response</h2>
+            <pre id="responseArea" class="text-gray-800 whitespace-pre-wrap"></pre>
+        </section>
+    </div>
+
+    <!-- Custom JS -->
+    <script src="script.js"></script>
+</body>
+
+</html>

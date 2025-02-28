@@ -16,7 +16,7 @@ class HelloNear {
   }
 
   @call({}) // This method changes the state, for which it cost gas
-  set_greeting({ greeting }: { greeting: string }): void {
+  log_action({ greeting }: { greeting: string }): void {
     near.log(`Saving greeting ${greeting}`);
     this.greeting = greeting;
   }

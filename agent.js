@@ -1,42 +1,52 @@
-const { postTweet, replyTweet, followUser } = require("./twitter");
+const { replyTweet, fetchTweet } = require("./twitter");
 const { logAction } = require("./near");
+const { GoogleGenerativeAI } = require("@google/generative-ai");
+require("dotenv").config();
 
-// Simple rule-based function to generate a witty response.
-function generateWittyResponse(targetTweet) {
-  const responses = [
-    "Oh really? That's hilarious!",
-    "I couldn't stop laughing at that!",
-    "Well, if that's your opinion, it's pretty funny.",
-    "Looks like someone needs a reality check!",
-    "I see you're trying too hard!"
-  ];
-  const randomIndex = Math.floor(Math.random() * responses.length);
-  return responses[randomIndex];
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+
+// Call Google Gemini API to generate a trolling response based on tweet content
+async function generateTrollResponse(tweetContent) {
+  const prompt = `Generate a trolling response for this tweet: "${tweetContent}"`;
+  try {
+    const result = await model.generateContent(prompt);
+    // Use the official pattern to get the text response
+    return result.response.text();
+  } catch (error) {
+    console.error("Error calling Google Gemini API:", error);
+    // Fallback response if Gemini fails
+    return "This tweet is by AI";
+  }
 }
 
-// Main function that runs the AI agent.
-async function runAgent() {
-  // Simulate a target tweet (in production, fetch a tweet using Twitter API search)
-  const dummyTweetId = "1234567890";
-  const targetTweetText = "This is a sample tweet for testing."; // dummy text
-  
-  // Generate a witty response
-  const wittyResponse = generateWittyResponse(targetTweetText);
-  
-  // Post the tweet on Twitter
-  const tweetResponse = await postTweet(wittyResponse);
-  
-  // Log the action on the NEAR blockchain
-  await logAction(`Posted tweet: "${wittyResponse}" in response to tweet ${dummyTweetId}`);
-  
-  // Optionally, reply to the target tweet
-  await replyTweet(dummyTweetId, "Here's my funny reply!");
-  
-  // Optionally, follow the tweet's author (using a dummy user ID)
-  const dummyUserId = "987654321";
-  await followUser(dummyUserId);
-  
-  return { tweetResponse, wittyResponse };
+async function runAgent(tweetLink) {
+  // Extract tweet id from the tweet link (assumes format: .../status/<tweetId>)
+  const tweetIdMatch = tweetLink.match(/status\/(\d+)/);
+  if (!tweetIdMatch) {
+    throw new Error("Invalid tweet link format.");
+  }
+  const tweetId = tweetIdMatch[1];
+
+  // Fetch tweet details (including its text)
+  const tweetData = await fetchTweet(tweetId);
+  if (!tweetData || !tweetData.text) {
+    throw new Error("Unable to fetch tweet content.");
+  }
+  const tweetContent = tweetData.text;
+  console.log("Fetched tweet content:", tweetContent);
+
+  // Get a trolling response from Google Gemini
+  const trollResponse = await generateTrollResponse(tweetContent);
+  console.log("Generated troll response:", trollResponse);
+
+  // Reply to the tweet using the generated response (using fallback in case trollResponse is empty)
+  const replyResponse = await replyTweet(tweetId, trollResponse || "This tweet is by AI");
+
+  // Log the action on NEAR blockchain
+  await logAction(`Replied to tweet ${tweetId} with: "${trollResponse}"`);
+
+  return { tweetId, tweetContent, trollResponse, replyResponse };
 }
 
 module.exports = { runAgent };
