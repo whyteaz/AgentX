@@ -102,6 +102,18 @@ async function checkBountyCondition(tweetId) {
   delete pendingBounties[tweetId];
 }
 
+// New endpoint for testing transferOmniToken from the frontend.
+app.get("/test-transfer", async (req, res) => {
+  const sampleWallet = req.query.wallet || "example.hotwallet";
+  const sampleAmount = req.query.amount || "1";
+  try {
+    const result = await transferOmniToken(sampleWallet, sampleAmount);
+    res.json({ status: "success", result });
+  } catch (error) {
+    res.status(500).json({ status: "error", error: error.toString() });
+  }
+});
+
 // Endpoint to fetch Troll Lord status for a given tweet link.
 app.get("/troll-status", (req, res) => {
   const tweetLink = req.query.tweetLink;

@@ -180,3 +180,22 @@ form.addEventListener('submit', async (e) => {
     startTimer();
   }
 });
+
+// Test transfer button functionality
+const testTransferBtn = document.getElementById('testTransferBtn');
+const testTransferResult = document.getElementById('testTransferResult');
+
+if (testTransferBtn) {
+  testTransferBtn.addEventListener('click', async () => {
+    try {
+      // Optionally, you can pass wallet and amount parameters via the query string.
+      const res = await fetch('/test-transfer?wallet=example.hotwallet&amount=1');
+      const data = await res.json();
+      console.log("Test Transfer Result:", data);
+      testTransferResult.textContent = JSON.stringify(data);
+    } catch (err) {
+      console.error("Error testing transfer:", err);
+      testTransferResult.textContent = "Error testing transfer: " + err.toString();
+    }
+  });
+}

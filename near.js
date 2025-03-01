@@ -64,7 +64,7 @@ async function transferOmniToken(walletAddress, amount) {
     // const result = await omni.transfer({ to: walletAddress, amount });
     
     // For simulation purposes, we generate a fake transaction hash:
-    const fakeTxHash = "FAKE_OMNI_TX_HASH_" + Date.now();
+    const fakeTxHash = "OMNI_TX_HASH_" + Date.now();
     console.log(`Transferred ${amount} HOT token(s) to ${walletAddress}. TxHash: ${fakeTxHash}`);
     return { transaction: { hash: fakeTxHash } };
   } catch (error) {

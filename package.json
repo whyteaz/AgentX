@@ -13,6 +13,7 @@
   "license": "ISC",
   "dependencies": {
     "@google/generative-ai": "^0.22.0",
+    "@hot-wallet/omni-sdk": "file:omni-sdk",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "near-api-js": "^5.0.1",
