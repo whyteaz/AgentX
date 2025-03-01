@@ -4,7 +4,10 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 require("dotenv").config();
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+const model = genAI.getGenerativeModel({
+  model: "gemini-2.0-flash-lite",
+  systemInstruction: "Your task is to troll internet strangers on twitter. Please response to the original tweet post by trolling the poster.  Your troll response should be as spicy as possible while not making it rude. Make sure to only output the exact tweet response and do not include anything else."
+});
 
 // Call Google Gemini API to generate a trolling response based on tweet content
 async function generateTrollResponse(tweetContent) {
