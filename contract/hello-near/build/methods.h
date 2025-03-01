@@ -1,2 +1,2 @@
 DEFINE_NEAR_METHOD(get_greeting)
-DEFINE_NEAR_METHOD(log_action)
+DEFINE_NEAR_METHOD(proof_of_troll)

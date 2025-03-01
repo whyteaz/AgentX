@@ -16,7 +16,7 @@ class HelloNear {
   }
 
   @call({}) // This method changes the state, for which it cost gas
-  log_action({ greeting }: { greeting: string }): void {
+  proof_of_troll({ greeting }: { greeting: string }): void {
     near.log(`Saving greeting ${greeting}`);
     this.greeting = greeting;
   }

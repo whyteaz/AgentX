@@ -35,10 +35,10 @@ async function logAction(actionDescription) {
     const near = await initNear();
     const account = await near.account(accountId);
     const contractId = process.env.CONTRACT_ID;
-    console.log("Calling contract", contractId, "with method log_action.");
+    console.log("Calling contract", contractId, "with method proof_of_troll.");
     const result = await account.functionCall({
       contractId: contractId,
-      methodName: "log_action",
+      methodName: "proof_of_troll",
       args: { message: actionDescription },
       gas: "30000000000000", // 30 TeraGas
       attachedDeposit: "0"
