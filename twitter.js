@@ -1,3 +1,4 @@
+// twitter.js
 const { TwitterApi } = require("twitter-api-v2");
 require("dotenv").config();
 
@@ -33,16 +34,8 @@ async function replyTweet(tweetId, status) {
     console.log("Replied to tweet successfully:", response);
     return response;
   } catch (error) {
-    if (error.code === 429 && error.headers && error.headers['x-rate-limit-reset']) {
-      const resetTimestamp = parseInt(error.headers['x-rate-limit-reset'], 10) * 1000; // convert to ms
-      const timeRemainingSeconds = Math.ceil((resetTimestamp - Date.now()) / 1000);
-      const message = `Rate limit exceeded. Please wait ${timeRemainingSeconds} seconds before retrying.`;
-      console.error(message);
-      throw new Error(message);
-    } else {
-      console.error("Error replying to tweet:", error);
-      throw error;
-    }
+    console.error("Error replying to tweet:", error);
+    throw error;
   }
 }
 
@@ -67,6 +60,24 @@ async function fetchTweet(tweetId) {
   }
 }
 
+// NEW: Function to fetch mentions for the authenticated user
+async function fetchMentions() {
+  try {
+    console.log("Fetching mentions...");
+    const user = await twitterClient.v2.me();
+    const userId = user.data.id;
+    const mentionsTimeline = await twitterClient.v2.userMentionTimeline(userId, {
+      max_results: 5,
+      "tweet.fields": "text,created_at"
+    });
+    console.log("Mentions fetched:", mentionsTimeline.data);
+    return mentionsTimeline.data;
+  } catch (error) {
+    console.error("Error fetching mentions:", error);
+    return [];
+  }
+}
+
 // Function to follow a user (if needed)
 async function followUser(userId) {
   console.log(`Attempting to follow user with ID: ${userId}`);
@@ -79,4 +90,4 @@ async function followUser(userId) {
   }
 }
 
-module.exports = { postTweet, replyTweet, followUser, fetchTweet };
+module.exports = { fetchMentions, replyTweet, fetchTweet, postTweet, followUser };

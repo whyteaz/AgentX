@@ -3,6 +3,7 @@ const express = require("express");
 const path = require("path");
 const { runAgent } = require("./agent");
 const { transferOmniToken } = require("./near");
+const { fetchMentions, replyTweet } = require("./twitter"); // Import fetchMentions and replyTweet
 require("dotenv").config();
 
 const app = express();
@@ -124,6 +125,34 @@ app.get("/troll-status", (req, res) => {
   res.json({ status: "Success", data: status });
 });
 
+// Start the server and begin polling for mentions using a recursive setTimeout
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
+
+  // Recursive polling function for mentions
+  async function pollMentions() {
+    try {
+      console.log("Checking for mentions...");
+      const mentions = await fetchMentions();
+      if (mentions && mentions.length > 0) {
+        for (const mention of mentions) {
+          const tweetId = mention.id;
+          const tweetText = mention.text;
+          console.log(`Mention detected: ${tweetText}`);
+          // Reply with "Hi"
+          await replyTweet(tweetId, "Hi");
+          console.log(`Replied with 'Hi' to tweet ID: ${tweetId}`);
+        }
+      } else {
+        console.log("No new mentions.");
+      }
+    } catch (error) {
+      console.error("Error during mention polling:", error);
+    }
+    // Schedule next poll after 5 minutes (for testing, you can reduce this interval)
+    setTimeout(pollMentions, 5 * 60 * 1000);
+  }
+
+  // Start the polling immediately
+  pollMentions();
 });
