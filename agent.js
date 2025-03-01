@@ -38,21 +38,21 @@ async function runAgent(tweetLink, replyCount) {
   console.log("Extracted tweet ID:", tweetId);
 
   console.log("Fetching tweet details for tweet ID:", tweetId);
-  // //DEBUG OFF
-  // const tweetData = await fetchTweet(tweetId);
-  // if (!tweetData || !tweetData.text) {
-  //   console.error("Error: Unable to fetch tweet content.");
-  //   throw new Error("Unable to fetch tweet content.");
-  // }
-  // const tweetContent = tweetData.text;
-  // // Use tweetData.id as original user id per instruction.
-  // const originalUserId = tweetData.id || "N/A";
-  // //DEBUG OFF
+  //DEBUG OFF
+  const tweetData = await fetchTweet(tweetId);
+  if (!tweetData || !tweetData.text) {
+    console.error("Error: Unable to fetch tweet content.");
+    throw new Error("Unable to fetch tweet content.");
+  }
+  const tweetContent = tweetData.text;
+  // Use tweetData.id as original user id per instruction.
+  const originalUserId = tweetData.id || "N/A";
+  //DEBUG OFF
 
-  //DEBUG ON
-  const tweetContent = "Hi, I'm a tweet content";
-  const originalUserId = tweetId;
-  //DEBUG ON
+  // //DEBUG ON
+  // const tweetContent = "Hi, I'm a tweet content";
+  // const originalUserId = tweetId;
+  // //DEBUG ON
 
   console.log("Fetched tweet content:", tweetContent);
   console.log("Original tweet ID (used as user id):", originalUserId);

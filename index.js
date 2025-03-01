@@ -2,6 +2,7 @@
 const express = require("express");
 const path = require("path");
 const { runAgent } = require("./agent");
+const { transferOmniToken } = require("./near");
 require("dotenv").config();
 
 const app = express();
@@ -13,20 +14,31 @@ app.use(express.static(path.join(__dirname, "public")));
 // In-memory store for Troll Lord statuses (key: tweetLink)
 const trollStatuses = {};
 
+// In-memory store for bounty tasks (key: tweetId)
+const pendingBounties = {};
+
 // /trigger endpoint: if Troll Lord mode is enabled, schedule replies; otherwise, process one reply.
 app.post("/trigger", async (req, res) => {
   const tweetLink = req.body.tweetLink;
   const trollLordMode = req.body.trollLord === "on" || req.body.trollLord === "true";
+  const hotWallet = req.body.hotWallet; // Capture HOT wallet address
   console.log("Troll Lord mode:", trollLordMode);
   
   if (trollLordMode) {
-    // Initialize the status array for this tweetLink.
+    // For Troll Lord mode we won’t process bounty checking
     trollStatuses[tweetLink] = [];
     scheduleTrollReplies(tweetLink);
     res.json({ status: "Success", message: "Troll Lord mode activated: 10 replies scheduled." });
   } else {
     try {
       const result = await runAgent(tweetLink);
+      // If HOT wallet address is provided, store bounty details and schedule a check after 24 hours.
+      if (hotWallet) {
+        pendingBounties[result.tweetId] = { hotWallet, submittedAt: Date.now() };
+        setTimeout(() => {
+          checkBountyCondition(result.tweetId);
+        }, 24 * 60 * 60 * 1000); // 24 hours in milliseconds
+      }
       res.json({ status: "Success", data: result });
     } catch (error) {
       console.error("Error in /trigger:", error);
@@ -73,6 +85,34 @@ function scheduleTrollReplies(tweetLink) {
     }
   }, interval);
 }
+
+// Simulated bounty check that triggers a HOT token transfer manually without checking tweet likes.
+async function checkBountyCondition(tweetId) {
+  const bounty = pendingBounties[tweetId];
+  if (!bounty) return;
+  try {
+    console.log(`Simulating bounty check for tweet ${tweetId}: assuming tweet qualifies for bounty.`);
+    // Transfer 1 HOT token (or desired amount) to the provided wallet address using HOT OMNI SDK.
+    const transferResult = await transferOmniToken(bounty.hotWallet, "1");
+    console.log("HOT token transfer result:", transferResult);
+  } catch (error) {
+    console.error("Error simulating bounty condition for tweet:", tweetId, error);
+  }
+  // Remove the bounty task regardless of outcome.
+  delete pendingBounties[tweetId];
+}
+
+// New endpoint for testing transferOmniToken from the frontend.
+app.get("/test-transfer", async (req, res) => {
+  const sampleWallet = req.query.wallet || "example.hotwallet";
+  const sampleAmount = req.query.amount || "1";
+  try {
+    const result = await transferOmniToken(sampleWallet, sampleAmount);
+    res.json({ status: "success", result });
+  } catch (error) {
+    res.status(500).json({ status: "error", error: error.toString() });
+  }
+});
 
 // Endpoint to fetch Troll Lord status for a given tweet link.
 app.get("/troll-status", (req, res) => {

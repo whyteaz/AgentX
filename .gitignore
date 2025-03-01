@@ -130,3 +130,6 @@ dist
 .pnp.*
 .vercel
 .DS_Store
+
+# Ignore omni-sdk directory
+omni-sdk/
