@@ -3,48 +3,50 @@
 <head>
   <meta charset="UTF-8">
   <title>AI Trolling Agent</title>
-  <!-- Import Inter font from Google Fonts (similar to near.org) -->
+  <!-- Import Inter font -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <!-- Tailwind CSS CDN -->
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <!-- Custom CSS -->
   <link rel="stylesheet" href="style.css">
+  <!-- Enable Tailwind's dark mode browser plugin if needed -->
+  <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
 </head>
-<body class="bg-gray-50 font-inter">
+<body class="bg-gray-50 font-inter dark:bg-gray-900 dark:text-gray-200">
   <div class="container mx-auto py-12 px-4">
     <header class="text-center mb-12">
-      <h1 class="text-4xl font-bold text-blue-700">AI Trolling Agent</h1>
-      <p class="text-lg text-gray-600 mt-2">Empowering decentralized intelligence with a touch of humor</p>
-      <p class="text-md text-gray-500 mt-1">Troll the internet while logging every action on the NEAR blockchain</p>
+      <h1 class="text-4xl font-bold text-blue-700 dark:text-blue-300">AI Trolling Agent</h1>
+      <p class="text-lg text-gray-600 mt-2 dark:text-gray-400">Empowering decentralized intelligence with a touch of humor</p>
+      <p class="text-md text-gray-500 mt-1 dark:text-gray-300">Troll the internet while logging every action on the NEAR blockchain</p>
     </header>
     
     <!-- How It Works Section -->
-    <section class="bg-white rounded-lg shadow p-8 mb-8">
-      <h2 class="text-2xl font-semibold text-blue-700 mb-4">How It Works</h2>
-      <p class="text-gray-700 leading-relaxed">
-        Enter a tweet link below. Our AI agent will fetch the tweet content using Twitter’s API, send it to Google Gemini for a spicy (but respectful) trolling response, reply to the tweet, and then log the interaction on the NEAR blockchain.
+    <section class="bg-white rounded-lg shadow p-8 mb-8 dark:bg-gray-800">
+      <h2 class="text-2xl font-semibold text-blue-700 mb-4 dark:text-blue-300">How It Works</h2>
+      <p class="text-gray-700 leading-relaxed dark:text-gray-300">
+        Enter a tweet link below and choose whether to enable "Troll Lord" mode. In standard mode, our AI agent fetches the tweet, generates a spicy trolling response using Google Gemini, replies on Twitter, and logs the action on NEAR.
       </p>
-      <p class="mt-4 text-gray-700">
-        <strong>Note:</strong> You can only trigger this action once every 15 minutes.
+      <p class="text-gray-700 leading-relaxed mt-2 dark:text-gray-300">
+        <strong>Troll Lord Mode:</strong> When enabled, the agent automatically replies to the target tweet 10 times at 16-minute intervals. The UI switches to dark mode (including input text), and an image appears next to the toggle. The response section updates with each reply's status until all 10 replies are complete.
       </p>
-    </section>
-    
-    <!-- Unique Selling Point Section -->
-    <section class="bg-white rounded-lg shadow p-8 mb-8">
-      <h2 class="text-2xl font-semibold text-blue-700 mb-4">Why We Deserve to Win</h2>
-      <p class="text-gray-700 leading-relaxed">
-        Our project uniquely merges AI, Web3, and decentralized autonomy to create an engaging, disruptive user experience. By leveraging NEAR’s scalable blockchain, cutting-edge Google Gemini AI, and seamless Twitter integration, we offer a truly user-owned solution that challenges centralized narratives. This innovative blend not only pushes technological boundaries but also redefines online interaction.
+      <p class="mt-4 text-gray-700 dark:text-gray-300">
+        <strong>Note:</strong> In standard mode, you can only trigger the AI agent once every 15 minutes.
       </p>
     </section>
     
-    <!-- Form Section -->
-    <section class="bg-white rounded-lg shadow p-8 mb-8">
+    <!-- AI Agent Submission Section -->
+    <section class="bg-white rounded-lg shadow p-8 mb-8 dark:bg-gray-800">
       <form id="tweetForm">
+        <div class="mb-4 flex items-center">
+          <input type="checkbox" id="trollLord" name="trollLord" class="mr-2">
+          <label for="trollLord" class="text-gray-700 font-medium dark:text-gray-300">Enable Troll Lord Mode</label>
+          <img id="trolllordImg" src="assets/trolllord.png" alt="Troll Lord" class="w-10 h-10 ml-4 hidden">
+        </div>
         <div class="mb-4">
-          <label for="tweetLink" class="block text-gray-700 font-medium mb-2">Tweet Link</label>
+          <label for="tweetLink" class="block text-gray-700 font-medium mb-2 dark:text-gray-300">Tweet Link</label>
           <input type="text" id="tweetLink" name="tweetLink" class="input-field" placeholder="https://twitter.com/username/status/1234567890123456789" required>
         </div>
-        <button type="submit" id="submitBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded disabled:opacity-50">
+        <button type="submit" id="submitBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded disabled:opacity-50 disabled:cursor-not-allowed">
           Submit
         </button>
         <div id="timer" class="mt-4 text-center text-red-600 font-semibold"></div>
@@ -52,13 +54,12 @@
     </section>
     
     <!-- Response Section -->
-    <section class="bg-white rounded-lg shadow p-8">
-      <h2 class="text-2xl font-semibold text-blue-700 mb-4">Response</h2>
-      <div id="responseArea" class="text-gray-800 space-y-6"></div>
+    <section class="bg-white rounded-lg shadow p-8 mb-8 dark:bg-gray-800">
+      <h2 class="text-2xl font-semibold text-blue-700 mb-4 dark:text-blue-300">Response</h2>
+      <div id="responseArea" class="space-y-4 dark:text-gray-200"></div>
     </section>
   </div>
   
-  <!-- Custom JS -->
   <script src="script.js"></script>
 </body>
 </html>
