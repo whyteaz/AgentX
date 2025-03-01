@@ -103,7 +103,7 @@ async function pollTrollStatus() {
 function updateTrollStatusUI(statusArray) {
   let html = `<p class="text-blue-600 font-semibold">Troll Lord mode in progress...</p>`;
   if (!statusArray || statusArray.length === 0) {
-    html += `<p>It is 10 freaking trolling, come back in a bit.</p>`;
+    html += `<p>Persistent trolling has been scheduled. It is 10 freaking trolling, come back in a bit.</p>`;
   } else {
     statusArray.forEach(item => {
       const replyInfo = item.result ? `Reply #${item.replyNumber}: ${JSON.stringify(item.result)}` : `Reply #${item.replyNumber} Error: ${item.error}`;
