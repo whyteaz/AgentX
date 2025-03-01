@@ -67,7 +67,7 @@ async function fetchMentions() {
     const user = await twitterClient.v2.me();
     const userId = user.data.id;
     const mentionsTimeline = await twitterClient.v2.userMentionTimeline(userId, {
-      max_results: 5,
+      max_results: 1, // Fetch only the latest mention
       "tweet.fields": "text,created_at"
     });
     console.log("Mentions fetched:", mentionsTimeline.data);

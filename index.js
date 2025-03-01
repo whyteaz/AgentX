@@ -3,7 +3,7 @@ const express = require("express");
 const path = require("path");
 const { runAgent } = require("./agent");
 const { transferOmniToken } = require("./near");
-const { fetchMentions, replyTweet } = require("./twitter"); // Import fetchMentions and replyTweet
+const { fetchMentions, replyTweet } = require("./twitter");
 require("dotenv").config();
 
 const app = express();
@@ -14,7 +14,6 @@ app.use(express.static(path.join(__dirname, "public")));
 
 // In-memory store for Troll Lord statuses (key: tweetLink)
 const trollStatuses = {};
-
 // In-memory store for bounty tasks (key: tweetId)
 const pendingBounties = {};
 
@@ -125,17 +124,18 @@ app.get("/troll-status", (req, res) => {
   res.json({ status: "Success", data: status });
 });
 
-// Start the server and begin polling for mentions using a recursive setTimeout
+// Start the server and begin polling for mentions using recursive setTimeout.
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 
-  // Recursive polling function for mentions
   async function pollMentions() {
     try {
       console.log("Checking for mentions...");
       const mentions = await fetchMentions();
-      if (mentions && mentions.length > 0) {
-        for (const mention of mentions) {
+      // Use mentions.data if it exists; otherwise, use an empty array.
+      const mentionArray = (mentions && mentions.data) ? mentions.data : [];
+      if (mentionArray.length > 0) {
+        for (const mention of mentionArray) {
           const tweetId = mention.id;
           const tweetText = mention.text;
           console.log(`Mention detected: ${tweetText}`);
@@ -149,10 +149,7 @@ app.listen(port, () => {
     } catch (error) {
       console.error("Error during mention polling:", error);
     }
-    // Schedule next poll after 5 minutes (for testing, you can reduce this interval)
-    setTimeout(pollMentions, 5 * 60 * 1000);
+    setTimeout(pollMentions, 15 * 60 * 1000);
   }
-
-  // Start the polling immediately
   pollMentions();
 });
