@@ -1,6 +1,8 @@
 const { TwitterApi } = require("twitter-api-v2");
 require("dotenv").config();
 
+console.log("Initializing Twitter API client...");
+
 const twitterClient = new TwitterApi({
   appKey: process.env.TWITTER_API_KEY,
   appSecret: process.env.TWITTER_API_SECRET,
@@ -8,33 +10,31 @@ const twitterClient = new TwitterApi({
   accessSecret: process.env.TWITTER_ACCESS_SECRET,
 });
 
-// Utility to delay execution
-function delay(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
+console.log("Twitter API client initialized.");
 
 // Function to post a tweet (if needed)
 async function postTweet(status) {
+  console.log("Attempting to post tweet with status:", status);
   try {
     const response = await twitterClient.v2.tweet(status);
-    console.log("Tweet posted:", response);
+    console.log("Tweet posted successfully:", response);
     return response;
   } catch (error) {
     console.error("Error posting tweet:", error);
-    return null;
+    throw error;
   }
 }
 
 // Function to reply to a tweet given its tweetId
 async function replyTweet(tweetId, status) {
+  console.log(`Attempting to reply to tweet ID ${tweetId} with status: ${status}`);
   try {
     const response = await twitterClient.v2.tweet(status, { reply: { in_reply_to_tweet_id: tweetId } });
-    console.log("Replied to tweet:", response);
+    console.log("Replied to tweet successfully:", response);
     return response;
   } catch (error) {
-    // Check for rate limit error (429)
     if (error.code === 429 && error.headers && error.headers['x-rate-limit-reset']) {
-      const resetTimestamp = parseInt(error.headers['x-rate-limit-reset'], 10) * 1000; // in ms
+      const resetTimestamp = parseInt(error.headers['x-rate-limit-reset'], 10) * 1000; // convert to ms
       const timeRemainingSeconds = Math.ceil((resetTimestamp - Date.now()) / 1000);
       const message = `Rate limit exceeded. Please wait ${timeRemainingSeconds} seconds before retrying.`;
       console.error(message);
@@ -46,44 +46,36 @@ async function replyTweet(tweetId, status) {
   }
 }
 
-// Function to fetch a tweet's details using its tweetId
-async function fetchTweet(tweetId, attempt = 1) {
+// Function to fetch a tweet's details using its tweetId (no auto retry)
+async function fetchTweet(tweetId) {
+  console.log(`Fetching tweet details for tweet ID: ${tweetId}`);
   try {
     const tweet = await twitterClient.v2.singleTweet(tweetId);
-    console.log("Fetched tweet:", tweet);
+    console.log("Tweet fetched successfully:", tweet);
     return tweet.data;
   } catch (error) {
-    // Check if error code 429 (rate limit) is returned
-    if (error.code === 429) {
-      const resetTime = parseInt(error.headers['x-rate-limit-reset']) * 1000; // convert to ms
-      const currentTime = Date.now();
-      const waitTime = resetTime - currentTime > 0 ? resetTime - currentTime : 60000; // default to 60s
-      
-      console.warn(`Rate limit hit. Waiting for ${waitTime / 1000} seconds before retrying...`);
-      await delay(waitTime);
-      
-      // Optionally, limit the number of retries (e.g., maximum 3 attempts)
-      if (attempt < 3) {
-        return fetchTweet(tweetId, attempt + 1);
-      } else {
-        throw new Error("Exceeded maximum retries for fetching tweet.");
-      }
+    if (error.code === 429 && error.headers && error.headers['x-rate-limit-reset']) {
+      const resetTimestamp = parseInt(error.headers['x-rate-limit-reset'], 10) * 1000;
+      const timeRemainingSeconds = Math.ceil((resetTimestamp - Date.now()) / 1000);
+      const message = `Rate limit exceeded while fetching tweet. Please wait ${timeRemainingSeconds} seconds before retrying.`;
+      console.error(message);
+      throw new Error(message);
     } else {
       console.error("Error fetching tweet:", error);
-      return null;
+      throw error;
     }
   }
 }
 
-
 // Function to follow a user (if needed)
 async function followUser(userId) {
+  console.log(`Attempting to follow user with ID: ${userId}`);
   try {
     console.log(`Simulated following user with ID: ${userId}`);
     return { success: true };
   } catch (error) {
     console.error("Error following user:", error);
-    return null;
+    throw error;
   }
 }
 

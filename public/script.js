@@ -12,6 +12,16 @@ function delay(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+// Spinner HTML (using Tailwind CSS for animation)
+const spinnerHTML = `
+  <div class="flex justify-center items-center py-4">
+    <svg class="animate-spin h-8 w-8 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+    </svg>
+  </div>
+`;
+
 // Start or resume the countdown timer
 function startTimer(endTime) {
   if (!endTime) {
@@ -53,7 +63,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
-  responseArea.innerHTML = ''; // Clear previous response
+  // Show the spinner indicator while waiting
+  responseArea.innerHTML = spinnerHTML;
   submitBtn.disabled = true;
   
   const tweetLink = document.getElementById('tweetLink').value;
@@ -66,11 +77,24 @@ form.addEventListener('submit', async (e) => {
     });
     const data = await res.json();
     
-    // Format the response in a human-readable layout
+    // Build NEAR transaction URL if available
     const nearTxUrl = data.data.nearTxHash && data.data.nearTxHash !== "N/A" 
       ? `<a href="https://testnet.nearblocks.io/tx/${data.data.nearTxHash}" target="_blank" class="text-blue-600 underline">${data.data.nearTxHash}</a>`
       : "N/A";
     
+    // Extract Twitter reply tweet ID:
+    // Check both possible structures: replyResponse.data.id or replyResponse.id
+    const replyResp = data.data.replyResponse;
+    const twitterReplyId = replyResp && replyResp.data && replyResp.data.id 
+                            ? replyResp.data.id 
+                            : replyResp && replyResp.id 
+                              ? replyResp.id 
+                              : null;
+    const twitterReplyUrl = twitterReplyId 
+      ? `https://twitter.com/i/web/status/${twitterReplyId}` 
+      : "N/A";
+    
+    // Format the response HTML
     const html = `
       <div>
         <h3 class="text-xl font-semibold text-blue-700">Tweet ID</h3>
@@ -85,8 +109,8 @@ form.addEventListener('submit', async (e) => {
         <p>${data.data.trollResponse}</p>
       </div>
       <div>
-        <h3 class="text-xl font-semibold text-blue-700">Twitter Reply Response</h3>
-        <pre class="whitespace-pre-wrap">${JSON.stringify(data.data.replyResponse, null, 2)}</pre>
+        <h3 class="text-xl font-semibold text-blue-700">Twitter Reply URL</h3>
+        <p>${twitterReplyUrl !== "N/A" ? `<a href="${twitterReplyUrl}" target="_blank" class="text-blue-600 underline">${twitterReplyUrl}</a>` : "N/A"}</p>
       </div>
       <div>
         <h3 class="text-xl font-semibold text-blue-700">NEAR Log Transaction</h3>
