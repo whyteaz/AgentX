@@ -1,3 +1,4 @@
+// agent.js
 const { replyTweet, fetchTweet } = require("./twitter");
 const { logAction } = require("./near");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
@@ -11,7 +12,7 @@ const model = genAI.getGenerativeModel({
 });
 console.log("Google Gemini API initialized.");
 
-// Call Google Gemini API to generate a trolling response based on tweet content
+// Generate a trolling response based on tweet content.
 async function generateTrollResponse(tweetContent) {
   const prompt = `Generate a trolling response for this tweet: "${tweetContent}"`;
   console.log("Generating troll response with prompt:", prompt);
@@ -26,10 +27,10 @@ async function generateTrollResponse(tweetContent) {
   }
 }
 
-async function runAgent(tweetLink) {
+async function runAgent(tweetLink, replyCount) {
   console.log("Received tweet link:", tweetLink);
   
-  // Extract tweet id from the tweet link (assumes format: .../status/<tweetId>)
+  // Extract tweet id from the tweet link (expects format: .../status/<tweetId>)
   const tweetIdMatch = tweetLink.match(/status\/(\d+)/);
   if (!tweetIdMatch) {
     console.error("Error: Invalid tweet link format.");
@@ -38,7 +39,7 @@ async function runAgent(tweetLink) {
   const tweetId = tweetIdMatch[1];
   console.log("Extracted tweet ID:", tweetId);
 
-  // Fetch tweet details (including its text and author_id)
+  // Fetch tweet details (including its text)
   console.log("Fetching tweet details for tweet ID:", tweetId);
   const tweetData = await fetchTweet(tweetId);
   if (!tweetData || !tweetData.text) {
@@ -46,42 +47,46 @@ async function runAgent(tweetLink) {
     throw new Error("Unable to fetch tweet content.");
   }
   const tweetContent = tweetData.text;
-  const originalUserId = tweetData.author_id || "N/A";
+  // Use tweetData.id instead of tweetData.author_id per instructions
+  const originalUserId = tweetData.id || "N/A";
   console.log("Fetched tweet content:", tweetContent);
-  console.log("Original tweet author ID:", originalUserId);
+  console.log("Original tweet ID (used as user id):", originalUserId);
 
-  // Get a trolling response from Google Gemini
+  // Generate troll response
   console.log("Generating troll response for tweet content...");
-  const trollResponse = await generateTrollResponse(tweetContent);
+  let trollResponse = await generateTrollResponse(tweetContent);
+  if (!trollResponse) {
+    trollResponse = "This tweet is by AI";
+  }
+  if (replyCount !== undefined) {
+    trollResponse += ` (#${replyCount})`;
+  }
   console.log("Generated troll response:", trollResponse);
 
-  // Reply to the tweet using the generated response
+  // Reply to the tweet using the generated response.
   console.log("Replying to tweet with ID:", tweetId);
   const replyResponse = await replyTweet(tweetId, trollResponse || "This tweet is by AI");
   console.log("Reply response received:", replyResponse);
 
-  // Extract reply tweet author ID (if available)
-  const replyUserId = (replyResponse && replyResponse.data && replyResponse.data.author_id) || "N/A";
-  console.log("Reply tweet author ID:", replyUserId);
+  // Use replyResponse.data.id instead of replyResponse.data.author_id
+  const replyUserId = (replyResponse && replyResponse.data && replyResponse.data.id) || "N/A";
+  console.log("Reply tweet ID (used as user id):", replyUserId);
 
-  // Build the rich log data (plain text, no extra formatting)
+  // Build rich log data: timestamp|originalUserId|replyUserId|trollResponse
   const timestamp = new Date().toISOString();
-  // Format: timestamp|originalUserId|replyUserId|trollResponse
   const logData = `${timestamp}|${originalUserId}|${replyUserId}|${trollResponse}`;
   console.log("Constructed log data:", logData);
 
-  // Log the action on NEAR blockchain
+  // Log the action on NEAR blockchain.
   console.log("Logging action on NEAR blockchain with log data...");
   const logResult = await logAction(logData);
   console.log("NEAR log result:", logResult);
   
-  // Extract transaction hash from NEAR log result
   const nearTxHash = logResult && logResult.transaction && logResult.transaction.hash 
                       ? logResult.transaction.hash 
                       : "N/A";
   console.log("Extracted NEAR transaction hash:", nearTxHash);
 
-  // Return final result
   const finalResult = { tweetId, tweetContent, trollResponse, replyResponse, nearTxHash };
   console.log("Final agent result:", finalResult);
   return finalResult;

@@ -1,3 +1,4 @@
+// public/script.js
 const form = document.getElementById('tweetForm');
 const responseArea = document.getElementById('responseArea');
 const submitBtn = document.getElementById('submitBtn');
@@ -7,12 +8,7 @@ let timerInterval;
 const COUNTDOWN_DURATION = 900; // 15 minutes in seconds
 const TIMER_KEY = 'submissionTimerEnd';
 
-// Utility function to delay execution
-function delay(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-// Spinner HTML (using Tailwind CSS for animation)
+// Spinner HTML using Tailwind CSS
 const spinnerHTML = `
   <div class="flex justify-center items-center py-4">
     <svg class="animate-spin h-8 w-8 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -30,16 +26,12 @@ function startTimer(endTime) {
   }
   submitBtn.disabled = true;
   updateTimer();
-
-  timerInterval = setInterval(() => {
-    updateTimer();
-  }, 1000);
+  timerInterval = setInterval(() => { updateTimer(); }, 1000);
 }
 
 function updateTimer() {
   const endTime = parseInt(localStorage.getItem(TIMER_KEY), 10);
   const timeLeft = Math.floor((endTime - Date.now()) / 1000);
-  
   if (timeLeft > 0) {
     timerEl.textContent = `Please wait ${timeLeft} seconds before trying again.`;
     submitBtn.disabled = true;
@@ -61,30 +53,31 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
+// AI Agent form submission handler
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
-  // Show the spinner indicator while waiting
   responseArea.innerHTML = spinnerHTML;
   submitBtn.disabled = true;
   
-  const tweetLink = document.getElementById('tweetLink').value;
+  const formData = new FormData(form);
+  const params = new URLSearchParams();
+  for (const pair of formData.entries()) {
+    params.append(pair[0], pair[1]);
+  }
   
   try {
     const res = await fetch('/trigger', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ tweetLink })
+      body: params.toString()
     });
     const data = await res.json();
     
-    // Build NEAR transaction URL if available
-    const nearTxUrl = data.data.nearTxHash && data.data.nearTxHash !== "N/A" 
+    const nearTxUrl = data.data && data.data.nearTxHash && data.data.nearTxHash !== "N/A" 
       ? `<a href="https://testnet.nearblocks.io/tx/${data.data.nearTxHash}" target="_blank" class="text-blue-600 underline">${data.data.nearTxHash}</a>`
       : "N/A";
     
-    // Extract Twitter reply tweet ID:
-    // Check both possible structures: replyResponse.data.id or replyResponse.id
-    const replyResp = data.data.replyResponse;
+    const replyResp = data.data && data.data.replyResponse;
     const twitterReplyId = replyResp && replyResp.data && replyResp.data.id 
                             ? replyResp.data.id 
                             : replyResp && replyResp.id 
@@ -94,7 +87,6 @@ form.addEventListener('submit', async (e) => {
       ? `https://twitter.com/i/web/status/${twitterReplyId}` 
       : "N/A";
     
-    // Format the response HTML
     const html = `
       <div>
         <h3 class="text-xl font-semibold text-blue-700">Tweet ID</h3>
@@ -122,6 +114,5 @@ form.addEventListener('submit', async (e) => {
     responseArea.textContent = 'Error: ' + error;
   }
   
-  // Start the 15-minute countdown timer after submission
   startTimer();
 });
