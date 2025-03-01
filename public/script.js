@@ -1,4 +1,22 @@
 // public/script.js
+
+// Collapse toggle function moved from index.html
+function toggleCollapse(contentId) {
+  const content = document.getElementById(contentId);
+  // Determine the icon based on contentId
+  const iconId = (contentId === 'logContent') ? 'logToggleIcon' : 'testTransferToggleIcon';
+  const icon = document.getElementById(iconId);
+  if (content.classList.contains('hidden')) {
+    content.classList.remove('hidden');
+    icon.classList.add('rotate-180');
+  } else {
+    content.classList.add('hidden');
+    icon.classList.remove('rotate-180');
+  }
+}
+
+// Existing script.js content follows...
+
 const form = document.getElementById('tweetForm');
 const responseArea = document.getElementById('responseArea');
 const submitBtn = document.getElementById('submitBtn');
@@ -10,7 +28,7 @@ let pollInterval;
 
 const COUNTDOWN_DURATION = 900; // 15 minutes in seconds
 const TIMER_KEY = 'submissionTimerEnd';
-const POLL_INTERVAL = 60 * 1000; // 1 minute
+const POLL_INTERVAL = 15 * 60 * 1000; // 15 minutes in ms for mention polling
 
 // Spinner HTML using Tailwind CSS
 const spinnerHTML = `
@@ -89,38 +107,6 @@ async function callTrigger(replyCount) {
   }
 }
 
-// Function to poll /troll-status for Troll Lord mode.
-async function pollTrollStatus() {
-  const tweetLink = document.getElementById('tweetLink').value;
-  try {
-    const res = await fetch(`/troll-status?tweetLink=${encodeURIComponent(tweetLink)}`);
-    const data = await res.json();
-    updateTrollStatusUI(data.data);
-  } catch (error) {
-    console.error("Error polling troll status:", error);
-  }
-}
-
-// Update response area UI for Troll Lord mode.
-function updateTrollStatusUI(statusArray) {
-  let html = `<p class="text-blue-600 font-semibold">Troll Lord mode in progress...</p>`;
-  if (!statusArray || statusArray.length === 0) {
-    html += `<p>Persistent trolling has been scheduled. It is 10 freaking trolling, come back in a bit.</p>`;
-  } else {
-    statusArray.forEach(item => {
-      const replyInfo = item.result ? `Reply #${item.replyNumber}: ${JSON.stringify(item.result)}` : `Reply #${item.replyNumber} Error: ${item.error}`;
-      html += `<div class="border-b pb-2"><p>${replyInfo}</p></div>`;
-    });
-  }
-  responseArea.innerHTML = html;
-}
-
-// Start polling for Troll Lord mode.
-function startPolling() {
-  pollTrollStatus();
-  pollInterval = setInterval(pollTrollStatus, POLL_INTERVAL);
-}
-
 // Form submission handler.
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -129,10 +115,8 @@ form.addEventListener('submit', async (e) => {
   
   const isTrollLord = trollLordCheckbox.checked;
   if (isTrollLord) {
-    // For Troll Lord mode, show spinner and call trigger; scheduling remains server-side.
     const resData = await callTrigger();
     responseArea.innerHTML = `<p class="text-blue-600 font-semibold">Troll Lord mode activated: 10 replies scheduled.</p>`;
-    startPolling();
   } else {
     const data = await callTrigger();
     const nearTxUrl = data.data && data.data.nearTxHash && data.data.nearTxHash !== "N/A" 
@@ -188,7 +172,6 @@ const testTransferResult = document.getElementById('testTransferResult');
 if (testTransferBtn) {
   testTransferBtn.addEventListener('click', async () => {
     try {
-      // Optionally, you can pass wallet and amount parameters via the query string.
       const res = await fetch('/test-transfer?wallet=example.hotwallet&amount=1');
       const data = await res.json();
       console.log("Test Transfer Result:", data);
@@ -199,3 +182,30 @@ if (testTransferBtn) {
     }
   });
 }
+
+// New function to poll server logs and display in the "Server Logs" section
+function pollLogs() {
+  fetch("/logs")
+    .then(response => response.json())
+    .then(data => {
+      document.getElementById("logOutput").innerText = data.logs.join("\n");
+    })
+    .catch(err => console.error("Error fetching logs:", err));
+}
+setInterval(pollLogs, 5000); // Update logs every 5 seconds
+pollLogs();
+
+// Collapse toggle function moved from index.html
+function toggleCollapse(contentId) {
+    const content = document.getElementById(contentId);
+    // Determine the icon based on contentId
+    const iconId = (contentId === 'logContent') ? 'logToggleIcon' : 'testTransferToggleIcon';
+    const icon = document.getElementById(iconId);
+    if (content.classList.contains('hidden')) {
+      content.classList.remove('hidden');
+      icon.classList.add('rotate-180');
+    } else {
+      content.classList.add('hidden');
+      icon.classList.remove('rotate-180');
+    }
+  }

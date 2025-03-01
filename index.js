@@ -1,13 +1,22 @@
 // index.js
 const express = require("express");
 const path = require("path");
-const { runAgent } = require("./agent");
+const { runAgent, replyToMention } = require("./agent");
 const { transferOmniToken } = require("./near");
-const { fetchMentions, replyTweet } = require("./twitter");
+const { fetchMentions } = require("./twitter");
 require("dotenv").config();
 
 const app = express();
 const port = process.env.PORT || 3000;
+
+// In-memory store for server logs
+const serverLogs = [];
+const originalLog = console.log;
+console.log = function (...args) {
+  const message = args.join(" ");
+  serverLogs.push(message);
+  originalLog.apply(console, args);
+};
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "public")));
@@ -93,7 +102,7 @@ async function checkBountyCondition(tweetId) {
   try {
     console.log(`Simulating bounty check for tweet ${tweetId}: assuming tweet qualifies for bounty.`);
     // Transfer 1 HOT token (or desired amount) to the provided wallet address using HOT OMNI SDK.
-    const transferResult = await transferOmniToken(bounty.hotWallet, "1");
+    const transferResult = await transferOmniToken(bounty.hotWallet, "0.01");
     console.log("HOT token transfer result:", transferResult);
   } catch (error) {
     console.error("Error simulating bounty condition for tweet:", tweetId, error);
@@ -124,6 +133,11 @@ app.get("/troll-status", (req, res) => {
   res.json({ status: "Success", data: status });
 });
 
+// New endpoint to retrieve server logs.
+app.get("/logs", (req, res) => {
+  res.json({ logs: serverLogs });
+});
+
 // Start the server and begin polling for mentions using recursive setTimeout.
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
@@ -132,23 +146,24 @@ app.listen(port, () => {
     try {
       console.log("Checking for mentions...");
       const mentions = await fetchMentions();
-      // Use mentions.data if it exists; otherwise, use an empty array.
+      // Access the mentions from the returned object
       const mentionArray = (mentions && mentions.data) ? mentions.data : [];
       if (mentionArray.length > 0) {
-        for (const mention of mentionArray) {
-          const tweetId = mention.id;
-          const tweetText = mention.text;
-          console.log(`Mention detected: ${tweetText}`);
-          // Reply with "Hi"
-          await replyTweet(tweetId, "Hi");
-          console.log(`Replied with 'Hi' to tweet ID: ${tweetId}`);
-        }
+        // Since we're fetching only the latest mention, process the first one.
+        const mention = mentionArray[0];
+        const tweetId = mention.id;
+        const tweetText = mention.text;
+        console.log(`Mention detected: ${tweetText}`);
+        // Use agent's reply function
+        await replyToMention(tweetId, tweetText);
+        console.log(`Replied with 'Hi' to tweet ID: ${tweetId}`);
       } else {
         console.log("No new mentions.");
       }
     } catch (error) {
       console.error("Error during mention polling:", error);
     }
+    // Poll every 15 minutes (15 * 60 * 1000 ms)
     setTimeout(pollMentions, 15 * 60 * 1000);
   }
   pollMentions();

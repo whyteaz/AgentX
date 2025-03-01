@@ -67,14 +67,22 @@ async function fetchMentions() {
     const user = await twitterClient.v2.me();
     const userId = user.data.id;
     const mentionsTimeline = await twitterClient.v2.userMentionTimeline(userId, {
-      max_results: 1, // Fetch only the latest mention
+      max_results: 5,
       "tweet.fields": "text,created_at"
     });
     console.log("Mentions fetched:", mentionsTimeline.data);
     return mentionsTimeline.data;
   } catch (error) {
-    console.error("Error fetching mentions:", error);
-    return [];
+    if (error.code === 429 && error.headers && error.headers['x-rate-limit-reset']) {
+      const resetTimestamp = parseInt(error.headers['x-rate-limit-reset'], 10) * 1000; // convert seconds to ms
+      const timeRemainingSeconds = Math.ceil((resetTimestamp - Date.now()) / 1000);
+      const message = `Rate limit exceeded while fetching mentions. Please wait ${timeRemainingSeconds} seconds before retrying.`;
+      console.error(message);
+      throw new Error(message);
+    } else {
+      console.error("Error fetching mentions:", error);
+      throw error;
+    }
   }
 }
 
