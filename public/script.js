@@ -70,8 +70,10 @@ document.addEventListener('DOMContentLoaded', () => {
 // Function to call /trigger endpoint with an optional replyCount.
 async function callTrigger(replyCount) {
   const tweetLink = document.getElementById('tweetLink').value;
+  const hotWallet = document.getElementById('hotWallet').value; // Capture HOT wallet address
   const params = new URLSearchParams();
   params.append('tweetLink', tweetLink);
+  params.append('hotWallet', hotWallet); // Include HOT wallet address
   if (replyCount !== undefined) {
     params.append('replyCount', replyCount);
   }

@@ -1,3 +1,4 @@
+// near.js
 const nearAPI = require("near-api-js");
 const { connect, keyStores, KeyPair } = nearAPI;
 require("dotenv").config();
@@ -51,4 +52,25 @@ async function logAction(actionDescription) {
   }
 }
 
-module.exports = { logAction };
+// New function to transfer HOT Omni token using the HOT OMNI SDK.
+// NOTE: Replace the pseudocode below with actual HOT OMNI SDK calls as per the SDK guide:
+// https://github.com/hot-dao/omni-sdk
+async function transferOmniToken(walletAddress, amount) {
+  console.log("Initiating HOT token transfer using HOT OMNI SDK...");
+  try {
+    // Example pseudocode (adjust according to the HOT OMNI SDK documentation):
+    // const { Omni } = require("omni-sdk");
+    // const omni = new Omni({ network: process.env.NEAR_NETWORK, apiKey: process.env.HOT_OMNI_API_KEY });
+    // const result = await omni.transfer({ to: walletAddress, amount });
+    
+    // For simulation purposes, we generate a fake transaction hash:
+    const fakeTxHash = "FAKE_OMNI_TX_HASH_" + Date.now();
+    console.log(`Transferred ${amount} HOT token(s) to ${walletAddress}. TxHash: ${fakeTxHash}`);
+    return { transaction: { hash: fakeTxHash } };
+  } catch (error) {
+    console.error("Error transferring HOT token:", error);
+    return false;
+  }
+}
+
+module.exports = { logAction, transferOmniToken };
