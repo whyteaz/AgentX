@@ -32,8 +32,17 @@ async function replyTweet(tweetId, status) {
     console.log("Replied to tweet:", response);
     return response;
   } catch (error) {
-    console.error("Error replying to tweet:", error);
-    return null;
+    // Check for rate limit error (429)
+    if (error.code === 429 && error.headers && error.headers['x-rate-limit-reset']) {
+      const resetTimestamp = parseInt(error.headers['x-rate-limit-reset'], 10) * 1000; // in ms
+      const timeRemainingSeconds = Math.ceil((resetTimestamp - Date.now()) / 1000);
+      const message = `Rate limit exceeded. Please wait ${timeRemainingSeconds} seconds before retrying.`;
+      console.error(message);
+      throw new Error(message);
+    } else {
+      console.error("Error replying to tweet:", error);
+      throw error;
+    }
   }
 }
 

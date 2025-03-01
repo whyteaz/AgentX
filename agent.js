@@ -6,7 +6,7 @@ require("dotenv").config();
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const model = genAI.getGenerativeModel({
   model: "gemini-2.0-flash-lite",
-  systemInstruction: "Your task is to troll internet strangers on twitter. Please response to the original tweet post by trolling the poster.  Your troll response should be as spicy as possible while not making it rude. Make sure to only output the exact tweet response and do not include anything else."
+  systemInstruction: "Your task is to troll internet strangers on twitter. Please response to the original tweet post by trolling the poster. Your troll response should be as spicy as possible. Make sure to only output the exact tweet response and do not include anything else."
 });
 
 // Call Google Gemini API to generate a trolling response based on tweet content
@@ -46,10 +46,14 @@ async function runAgent(tweetLink) {
   // Reply to the tweet using the generated response (using fallback in case trollResponse is empty)
   const replyResponse = await replyTweet(tweetId, trollResponse || "This tweet is by AI");
 
-  // Log the action on NEAR blockchain
-  await logAction(`Replied to tweet ${tweetId} with: "${trollResponse}"`);
+  // Log the action on NEAR blockchain and capture the transaction result
+  const logResult = await logAction(`Replied to tweet ${tweetId} with: "${trollResponse}"`);
+  // Extract the transaction hash from logResult if available
+  const nearTxHash = logResult && logResult.transaction && logResult.transaction.hash 
+                      ? logResult.transaction.hash 
+                      : "N/A";
 
-  return { tweetId, tweetContent, trollResponse, replyResponse };
+  return { tweetId, tweetContent, trollResponse, replyResponse, nearTxHash };
 }
 
 module.exports = { runAgent };
