@@ -1,6 +1,7 @@
 # AI Trolling Agent
 
 **Troll Like a Pro, Log Like a Boss — Powered by AI and Blockchain!**
+Disclaimer: I am not a coder and this repo might trigger some senior dev that enjoy clean code and best practices. Please be kind.
 
 ## Overview
 
