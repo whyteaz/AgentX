@@ -111,5 +111,7 @@ Contributions are welcome! Feel free to fork this repository, implement improvem
 ## License
 This project is licensed under the MIT License. See the LICENSE file for details.
 
+
+
 Happy trolling and remember: Troll like a pro, log like a boss! 😎🔥
 
