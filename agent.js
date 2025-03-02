@@ -1,5 +1,5 @@
 // agent.js
-const { replyTweet, fetchTweet } = require("./twitter");
+const { replyTweet, fetchTweet, followUser } = require("./twitter");
 const { logAction } = require("./near");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 require("dotenv").config();
@@ -28,7 +28,7 @@ async function generateTrollResponse(tweetContent) {
 
 async function runAgent(tweetLink, replyCount) {
   console.log("Received tweet link:", tweetLink);
-  
+
   const tweetIdMatch = tweetLink.match(/status\/(\d+)/);
   if (!tweetIdMatch) {
     console.error("Error: Invalid tweet link format.");
@@ -49,10 +49,10 @@ async function runAgent(tweetLink, replyCount) {
   const originalUserId = tweetData.id || "N/A";
   //DEBUG OFF
 
-  // //DEBUG ON
+  //DEBUG ON
   // const tweetContent = "Hi, I'm a tweet content";
   // const originalUserId = tweetId;
-  // //DEBUG ON
+  //DEBUG ON
 
   console.log("Fetched tweet content:", tweetContent);
   console.log("Original tweet ID (used as user id):", originalUserId);
@@ -60,7 +60,7 @@ async function runAgent(tweetLink, replyCount) {
   console.log("Generating troll response for tweet content...");
   let trollResponse = await generateTrollResponse(tweetContent);
   if (!trollResponse) {
-    trollResponse = "This tweet is by AI";
+    trollResponse = "Hi (This tweet is by AI)";
   }
   if (replyCount !== undefined) {
     trollResponse += ` (#${replyCount})`;
@@ -68,7 +68,7 @@ async function runAgent(tweetLink, replyCount) {
   console.log("Generated troll response:", trollResponse);
 
   console.log("Replying to tweet with ID:", tweetId);
-  const replyResponse = await replyTweet(tweetId, trollResponse || "This tweet is by AI");
+  const replyResponse = await replyTweet(tweetId, trollResponse || "Hi (This tweet is by AI)");
   console.log("Reply response received:", replyResponse);
 
   const replyUserId = (replyResponse && replyResponse.data && replyResponse.data.id) || "N/A";
@@ -81,10 +81,10 @@ async function runAgent(tweetLink, replyCount) {
   console.log("Logging action on NEAR blockchain with log data...");
   const logResult = await logAction(logData);
   console.log("NEAR log result:", logResult);
-  
-  const nearTxHash = logResult && logResult.transaction && logResult.transaction.hash 
-                      ? logResult.transaction.hash 
-                      : "N/A";
+
+  const nearTxHash = logResult && logResult.transaction && logResult.transaction.hash
+    ? logResult.transaction.hash
+    : "N/A";
   console.log("Extracted NEAR transaction hash:", nearTxHash);
 
   const finalResult = { tweetId, tweetContent, trollResponse, replyResponse, nearTxHash };
@@ -92,4 +92,31 @@ async function runAgent(tweetLink, replyCount) {
   return finalResult;
 }
 
-module.exports = { runAgent };
+async function replyToMention(tweetId, tweetText) {
+  console.log(`Agent replying to mention. Tweet ID: ${tweetId} | Text: ${tweetText}`);
+  // Generate a troll response based on the tweet text.
+  const trollResponse = await generateTrollResponse(tweetText);
+  if (!trollResponse) {
+    trollResponse = "Hi (This tweet is by AI)";
+  }
+  const { replyTweet } = require("./twitter");
+  const replyResponse = await replyTweet(tweetId, trollResponse);
+  console.log("Agent reply response:", replyResponse);
+  // Log the action on NEAR blockchain.
+  const logData = `${new Date().toISOString()}|mention|${tweetId}|${trollResponse}`;
+  await logAction(logData);
+
+  // Fetch tweet details to get the id.
+  const tweetDetails = await fetchTweet(tweetId);
+  console.log("Fetched tweet details:", tweetDetails);
+  if (tweetDetails && tweetDetails.id) {
+    await followUser(tweetDetails.id);
+    console.log(`Followed user with ID: ${tweetDetails.id}`);
+  } else {
+    console.log("Unable to follow user: id not found.");
+  }
+
+  return replyResponse;
+}
+
+module.exports = { runAgent, replyToMention };

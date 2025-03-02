@@ -1,26 +1,47 @@
 // index.js
 const express = require("express");
 const path = require("path");
-const { runAgent } = require("./agent");
+const { runAgent, replyToMention } = require("./agent");
 const { transferOmniToken } = require("./near");
+const { fetchMentions } = require("./twitter");
 require("dotenv").config();
 
 const app = express();
 const port = process.env.PORT || 3000;
+
+// In-memory store for server logs
+const serverLogs = [];
+
+// Override console.log to capture logs with human-readable timestamp.
+const originalLog = console.log;
+console.log = function (...args) {
+  const timestamp = new Date().toLocaleString();
+  const message = `[${timestamp}] ${args.join(" ")}`;
+  serverLogs.push(message);
+  originalLog.call(console, message);
+};
+
+// Override console.error to capture error logs with timestamp.
+const originalError = console.error;
+console.error = function (...args) {
+  const timestamp = new Date().toLocaleString();
+  const message = `[${timestamp}] ${args.join(" ")}`;
+  serverLogs.push(message);
+  originalError.call(console, message);
+};
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "public")));
 
 // In-memory store for Troll Lord statuses (key: tweetLink)
 const trollStatuses = {};
-
 // In-memory store for bounty tasks (key: tweetId)
 const pendingBounties = {};
 
 // /trigger endpoint: if Troll Lord mode is enabled, schedule replies; otherwise, process one reply.
 app.post("/trigger", async (req, res) => {
   const tweetLink = req.body.tweetLink;
-  const trollLordMode = req.body.trollLord === "on" || req.body.trollLord === "true";
+  const trollLordMode = req.body.trollLord === "true"; // Now using boolean string "true"
   const hotWallet = req.body.hotWallet; // Capture HOT wallet address
   console.log("Troll Lord mode:", trollLordMode);
   
@@ -51,7 +72,7 @@ app.post("/trigger", async (req, res) => {
 function scheduleTrollReplies(tweetLink) {
   let count = 1;
   const maxCount = 10;
-  const interval = 16 * 60 * 1000; // 16 minutes in ms
+  const interval = 18 * 60 * 1000; // 18 minutes in ms
   console.log("Scheduling Troll Lord replies for tweet:", tweetLink);
 
   // Send the first reply immediately.
@@ -92,13 +113,11 @@ async function checkBountyCondition(tweetId) {
   if (!bounty) return;
   try {
     console.log(`Simulating bounty check for tweet ${tweetId}: assuming tweet qualifies for bounty.`);
-    // Transfer 1 HOT token (or desired amount) to the provided wallet address using HOT OMNI SDK.
-    const transferResult = await transferOmniToken(bounty.hotWallet, "1");
+    const transferResult = await transferOmniToken(bounty.hotWallet, "0.01");
     console.log("HOT token transfer result:", transferResult);
   } catch (error) {
     console.error("Error simulating bounty condition for tweet:", tweetId, error);
   }
-  // Remove the bounty task regardless of outcome.
   delete pendingBounties[tweetId];
 }
 
@@ -124,6 +143,35 @@ app.get("/troll-status", (req, res) => {
   res.json({ status: "Success", data: status });
 });
 
+// New endpoint to retrieve server logs.
+app.get("/logs", (req, res) => {
+  res.json({ logs: serverLogs });
+});
+
+// Start the server and begin polling for mentions using recursive setTimeout.
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
+
+  async function pollMentions() {
+    try {
+      console.log("Checking for mentions...");
+      const mentions = await fetchMentions();
+      const mentionArray = (mentions && mentions.data) ? mentions.data : [];
+      if (mentionArray.length > 0) {
+        // Process only the latest mention (the first in the array).
+        const mention = mentionArray[0];
+        const tweetId = mention.id;
+        const tweetText = mention.text;
+        console.log(`Mention detected: ${tweetText}`);
+        await replyToMention(tweetId, tweetText);
+        console.log(`Replied to mention for tweet ID: ${tweetId}`);
+      } else {
+        console.log("No new mentions.");
+      }
+    } catch (error) {
+      console.error("Error during mention polling:", error);
+    }
+    setTimeout(pollMentions, 20 * 60 * 1000);
+  }
+  pollMentions();
 });
