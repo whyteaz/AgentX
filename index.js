@@ -42,7 +42,7 @@ const pendingBounties = {};
 app.post("/trigger", async (req, res) => {
   const tweetLink = req.body.tweetLink;
   const trollLordMode = req.body.trollLord === "true"; // Now using boolean string "true"
-  const hotWallet = req.body.hotWallet; // Capture HOT wallet address
+  const hotWallet = req.body.hotWallet || null; // Capture HOT wallet address or null if not provided
   console.log("Troll Lord mode:", trollLordMode);
   
   if (trollLordMode) {
@@ -54,7 +54,7 @@ app.post("/trigger", async (req, res) => {
     try {
       const result = await runAgent(tweetLink);
       // If HOT wallet address is provided, store bounty details and schedule a check after 24 hours.
-      if (hotWallet) {
+      if (hotWallet && hotWallet.trim() !== "") {
         pendingBounties[result.tweetId] = { hotWallet, submittedAt: Date.now() };
         setTimeout(() => {
           checkBountyCondition(result.tweetId);
@@ -71,7 +71,7 @@ app.post("/trigger", async (req, res) => {
 // Server-side scheduling for Troll Lord mode.
 function scheduleTrollReplies(tweetLink) {
   let count = 1;
-  const maxCount = 10;
+  const maxCount = 2;
   const interval = 18 * 60 * 1000; // 18 minutes in ms
   console.log("Scheduling Troll Lord replies for tweet:", tweetLink);
 
@@ -171,7 +171,7 @@ app.listen(port, () => {
     } catch (error) {
       console.error("Error during mention polling:", error);
     }
-    setTimeout(pollMentions, 20 * 60 * 1000);
+    setTimeout(pollMentions, 24 * 60 * 60 * 1000); //poll every 24 hours
   }
   pollMentions();
 });
