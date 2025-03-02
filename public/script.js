@@ -89,9 +89,11 @@ document.addEventListener('DOMContentLoaded', () => {
 async function callTrigger(replyCount) {
   const tweetLink = document.getElementById('tweetLink').value;
   const hotWallet = document.getElementById('hotWallet').value; // Capture HOT wallet address
+  const trollLord = document.getElementById('trollLord').checked; // returns boolean true/false
   const params = new URLSearchParams();
   params.append('tweetLink', tweetLink);
   params.append('hotWallet', hotWallet); // Include HOT wallet address
+  params.append('trollLord', trollLord); // Include boolean value for trollLord mode
   if (replyCount !== undefined) {
     params.append('replyCount', replyCount);
   }

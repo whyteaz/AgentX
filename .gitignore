@@ -133,3 +133,4 @@ dist
 
 # Ignore omni-sdk directory
 omni-sdk/
+temp-debug.js
