@@ -46,7 +46,7 @@ npm install
 ### 3. Configure Environment Variables
 
 Create a .env file in the root directory of the project with the following variables (replace placeholder values with your own credentials):
-
+```
 PORT=3000
 NEAR_ACCOUNT_ID=your_near_account.testnet
 NEAR_PRIVATE_KEY=your_near_private_key
@@ -58,17 +58,17 @@ TWITTER_API_SECRET=your_twitter_api_secret
 TWITTER_ACCESS_TOKEN=your_twitter_access_token
 TWITTER_ACCESS_SECRET=your_twitter_access_secret
 HOT_OMNI_API_KEY=your_hot_omni_api_key  # if applicable
-
+```
 ## Running Locally
 
 To start the server locally, run:
-
+```
 npm start
-
+```
 For development with auto-reload, run:
-
+```
 npm run dev
-
+```
 The server will start on http://localhost:3000.
 
 ## How It Works
