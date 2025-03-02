@@ -176,7 +176,7 @@ const testTransferResult = document.getElementById('testTransferResult');
 if (testTransferBtn) {
   testTransferBtn.addEventListener('click', async () => {
     try {
-      const res = await fetch('/test-transfer?wallet=example.hotwallet&amount=1');
+      const res = await fetch('/test-transfer?wallet=test.hotwallet&amount=0.01');
       const data = await res.json();
       console.log("Test Transfer Result:", data);
       testTransferResult.textContent = JSON.stringify(data);
