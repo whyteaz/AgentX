@@ -32,8 +32,8 @@ Before running the app locally, ensure you have the following installed:
 
 Open your terminal and run:
 
-git clone https://github.com/yourusername/ai-troll-agent.git
-cd ai-troll-agent
+git clone https://github.com/yourusername/toas.git
+cd toas
 
 ### 2. Install Dependencies
 
