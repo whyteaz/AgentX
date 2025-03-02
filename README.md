@@ -33,16 +33,16 @@ Before running the app locally, ensure you have the following installed:
 ### 1. Clone the Repository
 
 Open your terminal and run:
-
+```
 git clone https://github.com/yourusername/toas.git
 cd toas
-
+```
 ### 2. Install Dependencies
 
 Install the required Node.js packages by running:
-
+```
 npm install
-
+```
 ### 3. Configure Environment Variables
 
 Create a .env file in the root directory of the project with the following variables (replace placeholder values with your own credentials):
