@@ -27,8 +27,14 @@
     
     <!-- How It Works Section -->
     <section class="bg-white rounded-lg shadow p-8 mb-8 dark:bg-gray-800">
-      <h2 class="text-2xl font-semibold text-blue-700 mb-4 dark:text-blue-300">How It Works</h2>
-      <p class="text-gray-700 leading-relaxed dark:text-gray-300">
+        <div class="flex justify-between items-center cursor-pointer" onclick="toggleCollapse('howItWorksContent')">
+            <h2 class="text-2xl font-semibold text-blue-700 dark:text-blue-300">How It Works</h2>
+            <svg id="howItWorksToggleIcon" class="w-6 h-6 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+            </svg>
+          </div>          
+        <div id="howItWorksContent">
+      <p class="text-gray-700 leading-relaxed dark:text-gray-300 mt-4">
         Our AI Trolling Agent uses state-of-the-art AI and blockchain integration to deliver savage Twitter replies that are logged immutably. Choose your weapon:
       </p>
       <ul class="list-disc ml-6 mt-4 text-gray-700 dark:text-gray-300">
@@ -54,6 +60,7 @@
       <p class="mt-8 text-gray-700 dark:text-gray-300 italic">
         <strong>Note:</strong> Elon’s API rate limits are no joke. In Standard mode, you can only fire off the AI agent every 15 minutes. When someone @mentions the agent, it'll mischievously troll the mentioned user and follow them. And since I couldn’t afford the premium API, the agent only checks for mentions once a day!
       </p>
+      </div>
     </section>
     
     <!-- AI Agent Submission Section -->
