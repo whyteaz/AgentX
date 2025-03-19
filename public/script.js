@@ -3,12 +3,11 @@
 // Constants for timer and polling intervals.
 const COUNTDOWN_DURATION = 900; // 15 minutes in seconds
 const TIMER_KEY = 'submissionTimerEnd';
-const POLL_INTERVAL_MS = 15 * 60 * 1000; // 15 minutes
 
 // Helper: Single collapse toggle function.
 function toggleCollapse(contentId) {
   const content = document.getElementById(contentId);
-  const iconId = contentId === 'logContent' ? 'logToggleIcon' : 'testTransferToggleIcon';
+  const iconId = contentId === 'logContent' ? 'logToggleIcon' : 'howItWorksToggleIcon';
   const icon = document.getElementById(iconId);
   content.classList.toggle('hidden');
   icon.classList.toggle('rotate-180');
@@ -70,15 +69,14 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-// API call helper
+// API call helper: Note hot wallet parameter removed.
 async function callTrigger(replyCount) {
   const tweetLink = document.getElementById('tweetLink').value;
-  const hotWallet = document.getElementById('hotWallet').value.trim();
   const trollLord = trollLordCheckbox.checked;
   const params = new URLSearchParams({ tweetLink, trollLord });
-  if (hotWallet) params.append('hotWallet', hotWallet);
-  if (replyCount !== undefined) params.append('replyCount', replyCount);
-  
+  if (replyCount !== undefined) {
+    params.append('replyCount', replyCount);
+  }
   try {
     const res = await fetch('/trigger', {
       method: 'POST',
@@ -102,11 +100,8 @@ form.addEventListener('submit', async (e) => {
     responseArea.innerHTML = `<p class="text-blue-600 font-semibold">Troll Lord mode activated: 10 replies scheduled.</p>`;
   } else {
     const data = await callTrigger();
-    const nearTxUrl = data.data?.nearTxHash && data.data.nearTxHash !== "N/A" 
-      ? `<a href="https://testnet.nearblocks.io/tx/${data.data.nearTxHash}" target="_blank" class="text-blue-600 underline">${data.data.nearTxHash}</a>`
-      : "N/A";
-    const replyResponse = data.data?.replyResponse;
-    const twitterReplyId = replyResponse?.data?.id || replyResponse?.id || null;
+    const replyResp = data.data?.replyResponse;
+    const twitterReplyId = replyResp?.data?.id || replyResp?.id || null;
     const twitterReplyUrl = twitterReplyId 
       ? `https://twitter.com/i/web/status/${twitterReplyId}` 
       : "N/A";
@@ -129,31 +124,13 @@ form.addEventListener('submit', async (e) => {
           <h3 class="text-xl font-semibold text-blue-700">Twitter Reply URL</h3>
           <p class="text-gray-800">${twitterReplyUrl !== "N/A" ? `<a href="${twitterReplyUrl}" target="_blank" class="text-blue-600 underline">${twitterReplyUrl}</a>` : "N/A"}</p>
         </div>
-        <div>
-          <h3 class="text-xl font-semibold text-blue-700">NEAR Log Transaction</h3>
-          <p class="text-gray-800">${nearTxUrl}</p>
-        </div>
       </div>
     `;
     startTimer();
   }
 });
 
-// Test transfer button functionality.
-const testTransferBtn = document.getElementById('testTransferBtn');
-const testTransferResult = document.getElementById('testTransferResult');
-
-if (testTransferBtn) {
-  testTransferBtn.addEventListener('click', async () => {
-    try {
-      const res = await fetch('/test-transfer?wallet=test.hotwallet&amount=0.01');
-      const data = await res.json();
-      testTransferResult.textContent = JSON.stringify(data);
-    } catch (err) {
-      testTransferResult.textContent = "Error testing transfer: " + err.toString();
-    }
-  });
-}
+// Removed Test Transfer button functionality as it's related to HOT wallet.
 
 // Poll server logs every 5 seconds.
 function pollLogs() {

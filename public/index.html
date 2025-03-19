@@ -17,49 +17,42 @@
   <div class="container mx-auto py-12 px-4">
     <header class="text-center mb-12">
       <h1 class="text-4xl font-bold text-blue-700 dark:text-blue-300">Trolling as a Service (TOAS)</h1>
-      <p class="text-lg text-gray-600 mt-2 dark:text-gray-400">Troll to Earn - AI Agent that Troll onChain</p>
+      <p class="text-lg text-gray-600 mt-2 dark:text-gray-400">Troll to Earn - AI Agent that Troll on Twitter</p>
       <p class="text-md text-gray-500 mt-1 dark:text-gray-300">
-      </br><strong>Tired of annoying strangers on the internet? Fight back with TOAS!</strong>
-      </br>TOAS is an AI Agent that trolls your target on X for a small NEAR token fee—currently free!
-      </br>Your troll tweets get recorded on the NEAR smart contract as Proof of Troll.
-      </br>Score 100+ likes and 50+ retweets to earn HOT tokens!</p>
+        </br><strong>Tired of annoying strangers on the internet? Fight back with TOAS!</strong>
+        </br>Our AI Agent generates a spicy Twitter reply to your target tweet.
+      </p>
     </header>
     
     <!-- How It Works Section -->
     <section class="bg-white rounded-lg shadow p-8 mb-8 dark:bg-gray-800">
-        <div class="flex justify-between items-center cursor-pointer" onclick="toggleCollapse('howItWorksContent')">
-            <h2 class="text-2xl font-semibold text-blue-700 dark:text-blue-300">How It Works</h2>
-            <svg id="howItWorksToggleIcon" class="w-6 h-6 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-            </svg>
-          </div>          
-        <div id="howItWorksContent">
-      <p class="text-gray-700 leading-relaxed dark:text-gray-300 mt-4">
-        Our AI Trolling Agent uses state-of-the-art AI and blockchain integration to deliver savage Twitter replies that are logged immutably. Choose your weapon:
-      </p>
-      <ul class="list-disc ml-6 mt-4 text-gray-700 dark:text-gray-300">
-        <li>
-          <strong>Standard Mode:</strong>
-          <ol class="list-decimal ml-4 mt-2">
-            <li>Paste a tweet link and your HOT wallet address (optionally to redeem reward).</li>
-            <li>Hit submit and watch our AI conjure a spicy comeback.</li>
-            <li>Your reply is unleashed on Twitter and immortalized on NEAR blockchain.</li>
-            <li>Sit back and wait—if your tweet hits the milestone, HOT tokens might be coming your way.</li>
-          </ol>
-        </li>
-        <li class="mt-4">
-          <strong>Troll Lord Mode:</strong>
-          <ol class="list-decimal ml-4 mt-2">
-            <li>Check the box to ascend to Troll Lord status.</li>
-            <li>Our AI agent hits the target tweet with a reply and schedules 9 more attacks every 20-minute.</li>
-            <li>Each savage reply is logged on the NEAR blockchain—because proof of trolling is everything.</li>
-            <li>Sit back and watch your target suffer.</li>
-          </ol>
-        </li>
-      </ul>
-      <p class="mt-8 text-gray-700 dark:text-gray-300 italic">
-        <strong>Note:</strong> Elon’s API rate limits are no joke. In Standard mode, you can only fire off the AI agent every 15 minutes. When someone @mentions the agent, it'll mischievously troll the mentioned user and follow them. And since I couldn’t afford the premium API, the agent only checks for mentions once a day!
-      </p>
+      <div class="flex justify-between items-center cursor-pointer" onclick="toggleCollapse('howItWorksContent')">
+        <h2 class="text-2xl font-semibold text-blue-700 dark:text-blue-300">How It Works</h2>
+        <svg id="howItWorksToggleIcon" class="w-6 h-6 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+        </svg>
+      </div>          
+      <div id="howItWorksContent">
+        <p class="text-gray-700 leading-relaxed dark:text-gray-300 mt-4">
+          Our AI Trolling Agent uses state-of-the-art AI to deliver savage Twitter replies.
+        </p>
+        <ul class="list-disc ml-6 mt-4 text-gray-700 dark:text-gray-300">
+          <li>
+            <strong>Standard Mode:</strong>
+            <ol class="list-decimal ml-4 mt-2">
+              <li>Paste a tweet link.</li>
+              <li>Hit submit and watch our AI generate a spicy comeback.</li>
+              <li>Your reply is unleashed on Twitter.</li>
+            </ol>
+          </li>
+          <li class="mt-4">
+            <strong>Troll Lord Mode:</strong>
+            <ol class="list-decimal ml-4 mt-2">
+              <li>Enable Troll Lord Mode via the checkbox.</li>
+              <li>The AI agent will send 10 successive replies at 16-minute intervals.</li>
+            </ol>
+          </li>
+        </ul>
       </div>
     </section>
     
@@ -75,11 +68,6 @@
           <label for="tweetLink" class="block text-gray-700 font-medium mb-2 dark:text-gray-300">Tweet Link</label>
           <input type="text" id="tweetLink" name="tweetLink" class="input-field" placeholder="https://twitter.com/username/status/1234567890123456789" required>
         </div>
-        <!-- HOT Wallet Address Input -->
-        <div class="mb-4">
-          <label for="hotWallet" class="block text-gray-700 font-medium mb-2 dark:text-gray-300">HOT Wallet Address</label>
-          <input type="text" id="hotWallet" name="hotWallet" class="input-field" placeholder="Enter your HOT wallet address">
-        </div>
         <button type="submit" id="submitBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded disabled:opacity-50 disabled:cursor-not-allowed">
           Submit
         </button>
@@ -91,22 +79,6 @@
     <section class="bg-white rounded-lg shadow p-8 mb-8 dark:bg-gray-800">
       <h2 class="text-2xl font-semibold text-blue-700 mb-4 dark:text-blue-300">Response</h2>
       <div id="responseArea" class="space-y-4 dark:text-gray-200"></div>
-    </section>
-
-    <!-- Collapsible Test HOT Token Transfer Section -->
-    <section id="testTransferSection" class="bg-white rounded-lg shadow p-8 mb-8 dark:bg-gray-800">
-      <div class="flex justify-between items-center cursor-pointer" onclick="toggleCollapse('testTransferContent')">
-        <h2 class="text-2xl font-semibold text-blue-700 dark:text-blue-300">Test HOT Token Transfer</h2>
-        <svg id="testTransferToggleIcon" class="w-6 h-6 transform transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-        </svg>
-      </div>
-      <div id="testTransferContent" class="hidden mt-4">
-        <button id="testTransferBtn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded">
-          Test Transfer
-        </button>
-        <div id="testTransferResult" class="mt-4 text-center dark:text-gray-200"></div>
-      </div>
     </section>
 
     <!-- Collapsible Server Logs Section -->

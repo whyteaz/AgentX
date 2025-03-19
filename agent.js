@@ -1,6 +1,6 @@
 // agent.js
 const { replyTweet, fetchTweet, followUser } = require("./twitter");
-const { logAction } = require("./near");
+// Removed NEAR dependency: no longer require logAction from near
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 require("dotenv").config();
 
@@ -12,9 +12,8 @@ const model = genAI.getGenerativeModel({
 });
 console.log("Google Gemini API initialized.");
 
-// In-memory stores for agent operations.
+// In-memory store for Troll Lord mode statuses.
 const trollStatuses = {};
-const pendingBounties = {};
 
 // Generates a trolling response using Google Gemini.
 async function generateTrollResponse(tweetContent) {
@@ -31,7 +30,7 @@ async function generateTrollResponse(tweetContent) {
   }
 }
 
-// Processes a tweet by generating a response, replying, and logging on NEAR.
+// Processes a tweet by generating a response and replying.
 async function runAgent(tweetLink, replyCount) {
   console.log("Received tweet link:", tweetLink);
   const tweetIdMatch = tweetLink.match(/status\/(\d+)/);
@@ -53,19 +52,8 @@ async function runAgent(tweetLink, replyCount) {
   const replyResponse = await replyTweet(tweetId, trollResponse);
   console.log("Reply response received:", replyResponse);
 
-  const replyUserId = replyResponse?.data?.id || "N/A";
-  console.log("Reply tweet ID:", replyUserId);
-
-  const logData = `${new Date().toISOString()}|${tweetId}|${replyUserId}|${trollResponse}`;
-  console.log("Constructed log data:", logData);
-
-  const logResult = await logAction(logData);
-  console.log("NEAR log result:", logResult);
-
-  const nearTxHash = logResult?.transaction?.hash || "N/A";
-  console.log("Extracted NEAR transaction hash:", nearTxHash);
-
-  return { tweetId, tweetContent, trollResponse, replyResponse, nearTxHash };
+  // NEAR logging code removed.
+  return { tweetId, tweetContent, trollResponse, replyResponse };
 }
 
 // Replies to a mention and follows the user.
@@ -74,15 +62,8 @@ async function replyToMention(tweetId, tweetText) {
   const trollResponse = await generateTrollResponse(tweetText) || "Hi (This tweet is by AI)";
   const replyResponse = await replyTweet(tweetId, trollResponse);
   console.log("Agent reply response:", replyResponse);
-  const logData = `${new Date().toISOString()}|mention|${tweetId}|${trollResponse}`;
-  await logAction(logData);
-  const tweetDetails = await fetchTweet(tweetId);
-  if (tweetDetails?.id) {
-    await followUser(tweetDetails.id);
-    console.log(`Followed user with ID: ${tweetDetails.id}`);
-  } else {
-    console.log("Unable to follow user: id not found.");
-  }
+  // Optionally: follow the user if desired.
+  // await followUser(tweetId);
   return replyResponse;
 }
 
@@ -125,21 +106,6 @@ async function scheduleTrollReplies(tweetLink) {
   }, interval);
 }
 
-// Simulates bounty check and triggers a HOT token transfer.
-async function checkBountyCondition(tweetId) {
-  const bounty = pendingBounties[tweetId];
-  if (!bounty) return;
-  try {
-    console.log(`Simulating bounty check for tweet ${tweetId}`);
-    const { transferOmniToken } = require("./near");
-    const transferResult = await transferOmniToken(bounty.hotWallet, "0.01");
-    console.log("HOT token transfer result:", transferResult);
-  } catch (error) {
-    console.error("Error during bounty check for tweet:", tweetId, error);
-  }
-  delete pendingBounties[tweetId];
-}
-
 // Recursively polls Twitter mentions every 24 hours.
 async function pollMentions() {
   const { fetchMentions } = require("./twitter");
@@ -150,7 +116,7 @@ async function pollMentions() {
       const mention = mentions.data[0];
       console.log(`Mention detected: ${mention.text}`);
       await replyToMention(mention.id, mention.text);
-      console.log(`Replied to mention for tweet ID: ${mention.id}`);
+      console.log(`(replyToMention call commented out) Would have replied to mention for tweet ID: ${mention.id}`);
     } else {
       console.log("No new mentions.");
     }
@@ -164,8 +130,6 @@ module.exports = {
   runAgent, 
   replyToMention, 
   scheduleTrollReplies, 
-  checkBountyCondition, 
   pollMentions, 
-  trollStatuses,
-  pendingBounties
+  trollStatuses 
 };

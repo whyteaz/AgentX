@@ -1,8 +1,7 @@
 // index.js
 const express = require("express");
 const path = require("path");
-const { runAgent, scheduleTrollReplies, checkBountyCondition, pollMentions, trollStatuses, pendingBounties } = require("./agent");
-const { transferOmniToken } = require("./near");
+const { runAgent, scheduleTrollReplies, pollMentions, trollStatuses } = require("./agent");
 require("dotenv").config();
 
 const app = express();
@@ -22,7 +21,7 @@ app.use(express.static(path.join(__dirname, "public")));
 
 // /trigger endpoint: Uses agent functions.
 app.post("/trigger", async (req, res) => {
-  const { tweetLink, trollLord, hotWallet } = req.body;
+  const { tweetLink, trollLord } = req.body;
   const trollLordMode = trollLord === "true";
   logMessage("Troll Lord mode:", trollLordMode);
   
@@ -32,10 +31,6 @@ app.post("/trigger", async (req, res) => {
   } else {
     try {
       const result = await runAgent(tweetLink);
-      if (hotWallet?.trim()) {
-        pendingBounties[result.tweetId] = { hotWallet, submittedAt: Date.now() };
-        setTimeout(() => checkBountyCondition(result.tweetId), 24 * 60 * 60 * 1000);
-      }
       res.json({ status: "Success", data: result });
     } catch (error) {
       logMessage("Error in /trigger:", error);
@@ -44,17 +39,7 @@ app.post("/trigger", async (req, res) => {
   }
 });
 
-// Test endpoint for HOT token transfer.
-app.get("/test-transfer", async (req, res) => {
-  const sampleWallet = req.query.wallet || "example.hotwallet";
-  const sampleAmount = req.query.amount || "1";
-  try {
-    const result = await transferOmniToken(sampleWallet, sampleAmount);
-    res.json({ status: "success", result });
-  } catch (error) {
-    res.status(500).json({ status: "error", error: error.toString() });
-  }
-});
+// Removed /test-transfer endpoint (HOT wallet code removed).
 
 // Endpoint to retrieve Troll Lord status.
 app.get("/troll-status", (req, res) => {
@@ -71,5 +56,5 @@ app.get("/logs", (req, res) => {
 // Start the server and begin polling for mentions.
 app.listen(port, () => {
   logMessage(`Server running on port ${port}`);
-  pollMentions(); // Start mention polling from agent.js.
+  //pollMentions(); // this reply to mentions on daily
 });
