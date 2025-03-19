@@ -15,7 +15,6 @@
     "@google/generative-ai": "^0.22.0",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
-    "near-api-js": "^5.0.1",
     "twitter-api-v2": "^1.20.2"
   },
   "devDependencies": {
