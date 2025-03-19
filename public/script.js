@@ -1,36 +1,28 @@
 // public/script.js
 
-// Collapse toggle function moved from index.html
+// Constants for timer and polling intervals.
+const COUNTDOWN_DURATION = 900; // 15 minutes in seconds
+const TIMER_KEY = 'submissionTimerEnd';
+const POLL_INTERVAL_MS = 15 * 60 * 1000; // 15 minutes
+
+// Helper: Single collapse toggle function.
 function toggleCollapse(contentId) {
   const content = document.getElementById(contentId);
-  // Determine the icon based on contentId
-  const iconId = (contentId === 'logContent') ? 'logToggleIcon' : 'testTransferToggleIcon';
+  const iconId = contentId === 'logContent' ? 'logToggleIcon' : 'testTransferToggleIcon';
   const icon = document.getElementById(iconId);
-  if (content.classList.contains('hidden')) {
-    content.classList.remove('hidden');
-    icon.classList.add('rotate-180');
-  } else {
-    content.classList.add('hidden');
-    icon.classList.remove('rotate-180');
-  }
+  content.classList.toggle('hidden');
+  icon.classList.toggle('rotate-180');
 }
 
-// Existing script.js content follows...
-
+// DOM Elements
 const form = document.getElementById('tweetForm');
 const responseArea = document.getElementById('responseArea');
 const submitBtn = document.getElementById('submitBtn');
 const timerEl = document.getElementById('timer');
 const trollLordCheckbox = document.getElementById('trollLord');
 const trollLordImg = document.getElementById('trolllordImg');
-let timerInterval;
-let pollInterval;
 
-const COUNTDOWN_DURATION = 900; // 15 minutes in seconds
-const TIMER_KEY = 'submissionTimerEnd';
-const POLL_INTERVAL = 15 * 60 * 1000; // 15 minutes in ms for mention polling
-
-// Spinner HTML using Tailwind CSS
+// Spinner HTML (Tailwind CSS)
 const spinnerHTML = `
   <div class="flex justify-center items-center py-4">
     <svg class="animate-spin h-8 w-8 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -40,26 +32,19 @@ const spinnerHTML = `
   </div>
 `;
 
-// Toggle dark mode and image display based on Troll Lord checkbox.
+// Dark mode toggle for Troll Lord
 trollLordCheckbox.addEventListener('change', () => {
-  if (trollLordCheckbox.checked) {
-    document.body.classList.add('dark');
-    trollLordImg.classList.remove('hidden');
-  } else {
-    document.body.classList.remove('dark');
-    trollLordImg.classList.add('hidden');
-  }
+  document.body.classList.toggle('dark', trollLordCheckbox.checked);
+  trollLordImg.classList.toggle('hidden', !trollLordCheckbox.checked);
 });
 
-// Start or resume the countdown timer.
-function startTimer(endTime) {
-  if (!endTime) {
-    endTime = Date.now() + COUNTDOWN_DURATION * 1000;
-    localStorage.setItem(TIMER_KEY, endTime);
-  }
+// Timer functions
+function startTimer(endTime = Date.now() + COUNTDOWN_DURATION * 1000) {
+  localStorage.setItem(TIMER_KEY, endTime);
   submitBtn.disabled = true;
   updateTimer();
-  timerInterval = setInterval(() => { updateTimer(); }, 1000);
+  clearInterval(window.timerInterval);
+  window.timerInterval = setInterval(updateTimer, 1000);
 }
 
 function updateTimer() {
@@ -69,7 +54,7 @@ function updateTimer() {
     timerEl.textContent = `Please wait ${timeLeft} seconds before trying again.`;
     submitBtn.disabled = true;
   } else {
-    clearInterval(timerInterval);
+    clearInterval(window.timerInterval);
     timerEl.textContent = '';
     submitBtn.disabled = false;
     localStorage.removeItem(TIMER_KEY);
@@ -85,20 +70,15 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-// Function to call /trigger endpoint with an optional replyCount.
+// API call helper
 async function callTrigger(replyCount) {
   const tweetLink = document.getElementById('tweetLink').value;
-  const hotWallet = document.getElementById('hotWallet').value; // Capture HOT wallet address
-  const trollLord = document.getElementById('trollLord').checked; // returns boolean true/false
-  const params = new URLSearchParams();
-  params.append('tweetLink', tweetLink);
-  params.append('trollLord', trollLord); // Include boolean value for trollLord mode
-  if (hotWallet.trim() !== "") {
-    params.append('hotWallet', hotWallet); // Append only if not empty
-  }  
-  if (replyCount !== undefined) {
-    params.append('replyCount', replyCount);
-  }
+  const hotWallet = document.getElementById('hotWallet').value.trim();
+  const trollLord = trollLordCheckbox.checked;
+  const params = new URLSearchParams({ tweetLink, trollLord });
+  if (hotWallet) params.append('hotWallet', hotWallet);
+  if (replyCount !== undefined) params.append('replyCount', replyCount);
+  
   try {
     const res = await fetch('/trigger', {
       method: 'POST',
@@ -117,27 +97,21 @@ form.addEventListener('submit', async (e) => {
   responseArea.innerHTML = spinnerHTML;
   submitBtn.disabled = true;
   
-  const isTrollLord = trollLordCheckbox.checked;
-  if (isTrollLord) {
+  if (trollLordCheckbox.checked) {
     const resData = await callTrigger();
     responseArea.innerHTML = `<p class="text-blue-600 font-semibold">Troll Lord mode activated: 10 replies scheduled.</p>`;
   } else {
     const data = await callTrigger();
-    const nearTxUrl = data.data && data.data.nearTxHash && data.data.nearTxHash !== "N/A" 
+    const nearTxUrl = data.data?.nearTxHash && data.data.nearTxHash !== "N/A" 
       ? `<a href="https://testnet.nearblocks.io/tx/${data.data.nearTxHash}" target="_blank" class="text-blue-600 underline">${data.data.nearTxHash}</a>`
       : "N/A";
-    
-    const replyResp = data.data && data.data.replyResponse;
-    const twitterReplyId = replyResp && replyResp.data && replyResp.data.id 
-                            ? replyResp.data.id 
-                            : replyResp && replyResp.id 
-                              ? replyResp.id 
-                              : null;
+    const replyResponse = data.data?.replyResponse;
+    const twitterReplyId = replyResponse?.data?.id || replyResponse?.id || null;
     const twitterReplyUrl = twitterReplyId 
       ? `https://twitter.com/i/web/status/${twitterReplyId}` 
       : "N/A";
     
-    const html = `
+    responseArea.innerHTML = `
       <div class="space-y-4">
         <div>
           <h3 class="text-xl font-semibold text-blue-700">Tweet ID</h3>
@@ -161,15 +135,11 @@ form.addEventListener('submit', async (e) => {
         </div>
       </div>
     `;
-    responseArea.innerHTML = html;
-  }
-  
-  if (!isTrollLord) {
     startTimer();
   }
 });
 
-// Test transfer button functionality
+// Test transfer button functionality.
 const testTransferBtn = document.getElementById('testTransferBtn');
 const testTransferResult = document.getElementById('testTransferResult');
 
@@ -178,16 +148,14 @@ if (testTransferBtn) {
     try {
       const res = await fetch('/test-transfer?wallet=test.hotwallet&amount=0.01');
       const data = await res.json();
-      console.log("Test Transfer Result:", data);
       testTransferResult.textContent = JSON.stringify(data);
     } catch (err) {
-      console.error("Error testing transfer:", err);
       testTransferResult.textContent = "Error testing transfer: " + err.toString();
     }
   });
 }
 
-// New function to poll server logs and display in the "Server Logs" section
+// Poll server logs every 5 seconds.
 function pollLogs() {
   fetch("/logs")
     .then(response => response.json())
@@ -196,20 +164,5 @@ function pollLogs() {
     })
     .catch(err => console.error("Error fetching logs:", err));
 }
-setInterval(pollLogs, 5000); // Update logs every 5 seconds
+setInterval(pollLogs, 5000);
 pollLogs();
-
-// Collapse toggle function moved from index.html
-function toggleCollapse(contentId) {
-    const content = document.getElementById(contentId);
-    // Determine the icon based on contentId
-    const iconId = (contentId === 'logContent') ? 'logToggleIcon' : 'testTransferToggleIcon';
-    const icon = document.getElementById(iconId);
-    if (content.classList.contains('hidden')) {
-      content.classList.remove('hidden');
-      icon.classList.add('rotate-180');
-    } else {
-      content.classList.add('hidden');
-      icon.classList.remove('rotate-180');
-    }
-  }
