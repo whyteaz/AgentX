@@ -26,8 +26,8 @@ app.post("/trigger", async (req, res, next) => {
     const trollLordMode = trollLord === "true";
     log("info", "Troll Lord mode:", trollLordMode);
 
-    // Simple input validation for tweet link.
-    if (!tweetLink || !/^https:\/\/twitter\.com\/.*\/status\/\d+/.test(tweetLink)) {
+    // Updated input validation to accept both twitter.com and x.com URLs.
+    if (!tweetLink || !/^https:\/\/(twitter\.com|x\.com)\/.*\/status\/\d+/.test(tweetLink)) {
       return res.status(400).json({ error: "Invalid tweet link provided." });
     }
 
@@ -64,6 +64,4 @@ app.use((err, req, res, next) => {
 // Start the server.
 app.listen(config.port, () => {
   log("info", `Server running on port ${config.port}`);
-  // Start polling for mentions (polling interval with exponential backoff implemented in pollMentions)
-  // pollMentions(); // Uncomment to enable polling
 });

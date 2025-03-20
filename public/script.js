@@ -1,9 +1,10 @@
 // public/script.js
 
+// Constants for timer and polling intervals.
 const COUNTDOWN_DURATION = 900; // 15 minutes in seconds
 const TIMER_KEY = 'submissionTimerEnd';
 
-// Helper: Toggle collapse for UI sections.
+// Helper: Single collapse toggle function.
 function toggleCollapse(contentId) {
   const content = document.getElementById(contentId);
   const iconId = contentId === 'logContent' ? 'logToggleIcon' : 'howItWorksToggleIcon';
@@ -20,7 +21,7 @@ const timerEl = document.getElementById('timer');
 const trollLordCheckbox = document.getElementById('trollLord');
 const trollLordImg = document.getElementById('trolllordImg');
 
-// Spinner HTML.
+// Spinner HTML (Tailwind CSS)
 const spinnerHTML = `
   <div class="flex justify-center items-center py-4">
     <svg class="animate-spin h-8 w-8 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -30,13 +31,13 @@ const spinnerHTML = `
   </div>
 `;
 
-// Dark mode toggle for Troll Lord.
+// Dark mode toggle for Troll Lord
 trollLordCheckbox.addEventListener('change', () => {
   document.body.classList.toggle('dark', trollLordCheckbox.checked);
   trollLordImg.classList.toggle('hidden', !trollLordCheckbox.checked);
 });
 
-// Timer functions.
+// Timer functions
 function startTimer(endTime = Date.now() + COUNTDOWN_DURATION * 1000) {
   localStorage.setItem(TIMER_KEY, endTime);
   submitBtn.disabled = true;
@@ -95,41 +96,52 @@ form.addEventListener('submit', async (e) => {
   submitBtn.disabled = true;
 
   try {
-    if (trollLordCheckbox.checked) {
-      await callTrigger();
-      responseArea.innerHTML = `<p class="text-blue-600 font-semibold">Troll Lord mode activated: 10 replies scheduled.</p>`;
-    } else {
-      const data = await callTrigger();
-      const replyResp = data.data?.replyResponse;
-      const twitterReplyId = replyResp?.data?.id || replyResp?.id || null;
-      const twitterReplyUrl = twitterReplyId 
-        ? `https://twitter.com/i/web/status/${twitterReplyId}` 
-        : "N/A";
+    const data = await callTrigger();
 
-      responseArea.innerHTML = `
-        <div class="space-y-4">
-          <div>
-            <h3 class="text-xl font-semibold text-blue-700">Tweet ID</h3>
-            <p class="text-gray-800">${data.data.tweetId}</p>
-          </div>
-          <div>
-            <h3 class="text-xl font-semibold text-blue-700">Tweet Content</h3>
-            <p class="text-gray-800">${data.data.tweetContent}</p>
-          </div>
-          <div>
-            <h3 class="text-xl font-semibold text-blue-700">Trolling Response</h3>
-            <p class="text-gray-800">${data.data.trollResponse}</p>
-          </div>
-          <div>
-            <h3 class="text-xl font-semibold text-blue-700">Twitter Reply URL</h3>
-            <p class="text-gray-800">${twitterReplyUrl !== "N/A" ? `<a href="${twitterReplyUrl}" target="_blank" class="text-blue-600 underline">${twitterReplyUrl}</a>` : "N/A"}</p>
-          </div>
-        </div>
-      `;
-      startTimer();
+    // Check for errors in the API response.
+    if (data.error) {
+      responseArea.innerHTML = `<p class="text-red-600 font-semibold">Error occurred: ${data.error}</p>`;
+      submitBtn.disabled = false;
+      return;
     }
+
+    // Validate that data.data exists.
+    if (!data.data) {
+      responseArea.innerHTML = `<p class="text-red-600 font-semibold">Error: Unexpected response format.</p>`;
+      submitBtn.disabled = false;
+      return;
+    }
+
+    const replyResp = data.data.replyResponse;
+    const twitterReplyId = replyResp?.data?.id || replyResp?.id || null;
+    const twitterReplyUrl = twitterReplyId 
+      ? `https://twitter.com/i/web/status/${twitterReplyId}` 
+      : "N/A";
+
+    responseArea.innerHTML = `
+      <div class="space-y-4">
+        <div>
+          <h3 class="text-xl font-semibold text-blue-700">Tweet ID</h3>
+          <p class="text-gray-800">${data.data.tweetId}</p>
+        </div>
+        <div>
+          <h3 class="text-xl font-semibold text-blue-700">Tweet Content</h3>
+          <p class="text-gray-800">${data.data.tweetContent}</p>
+        </div>
+        <div>
+          <h3 class="text-xl font-semibold text-blue-700">Trolling Response</h3>
+          <p class="text-gray-800">${data.data.trollResponse}</p>
+        </div>
+        <div>
+          <h3 class="text-xl font-semibold text-blue-700">Twitter Reply URL</h3>
+          <p class="text-gray-800">${twitterReplyUrl !== "N/A" ? `<a href="${twitterReplyUrl}" target="_blank" class="text-blue-600 underline">${twitterReplyUrl}</a>` : "N/A"}</p>
+        </div>
+      </div>
+    `;
+    startTimer();
   } catch (error) {
     responseArea.innerHTML = `<p class="text-red-600 font-semibold">Error occurred: ${error.message}</p>`;
+    submitBtn.disabled = false;
   }
 });
 
