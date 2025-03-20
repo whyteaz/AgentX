@@ -9,7 +9,8 @@ const requiredEnvVars = [
   "TWITTER_ACCESS_TOKEN",
   "TWITTER_ACCESS_SECRET",
   "SUPABASE_URL",
-  "SUPABASE_ANON_KEY"
+  "SUPABASE_ANON_KEY",
+  "SUPABASE_JWT_SECRET"
 ];
 
 requiredEnvVars.forEach((key) => {
@@ -26,5 +27,6 @@ module.exports = {
   twitterAccessToken: process.env.TWITTER_ACCESS_TOKEN,
   twitterAccessSecret: process.env.TWITTER_ACCESS_SECRET,
   supabaseUrl: process.env.SUPABASE_URL,
-  supabaseAnonKey: process.env.SUPABASE_ANON_KEY
+  supabaseAnonKey: process.env.SUPABASE_ANON_KEY,
+  supabaseJwtSecret: process.env.SUPABASE_JWT_SECRET
 };
