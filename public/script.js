@@ -69,7 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-// API call helper: Note hot wallet parameter removed.
+// API call helper.
 async function callTrigger(replyCount) {
   const tweetLink = document.getElementById('tweetLink').value;
   const trollLord = trollLordCheckbox.checked;
@@ -94,18 +94,30 @@ form.addEventListener('submit', async (e) => {
   e.preventDefault();
   responseArea.innerHTML = spinnerHTML;
   submitBtn.disabled = true;
-  
-  if (trollLordCheckbox.checked) {
-    const resData = await callTrigger();
-    responseArea.innerHTML = `<p class="text-blue-600 font-semibold">Troll Lord mode activated: 10 replies scheduled.</p>`;
-  } else {
+
+  try {
     const data = await callTrigger();
-    const replyResp = data.data?.replyResponse;
+
+    // Check for errors in the API response.
+    if (data.error) {
+      responseArea.innerHTML = `<p class="text-red-600 font-semibold">Error occurred: ${data.error}</p>`;
+      submitBtn.disabled = false;
+      return;
+    }
+
+    // Validate that data.data exists.
+    if (!data.data) {
+      responseArea.innerHTML = `<p class="text-red-600 font-semibold">Error: Unexpected response format.</p>`;
+      submitBtn.disabled = false;
+      return;
+    }
+
+    const replyResp = data.data.replyResponse;
     const twitterReplyId = replyResp?.data?.id || replyResp?.id || null;
     const twitterReplyUrl = twitterReplyId 
       ? `https://twitter.com/i/web/status/${twitterReplyId}` 
       : "N/A";
-    
+
     responseArea.innerHTML = `
       <div class="space-y-4">
         <div>
@@ -127,10 +139,11 @@ form.addEventListener('submit', async (e) => {
       </div>
     `;
     startTimer();
+  } catch (error) {
+    responseArea.innerHTML = `<p class="text-red-600 font-semibold">Error occurred: ${error.message}</p>`;
+    submitBtn.disabled = false;
   }
 });
-
-// Removed Test Transfer button functionality as it's related to HOT wallet.
 
 // Poll server logs every 5 seconds.
 function pollLogs() {

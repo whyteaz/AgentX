@@ -1,45 +1,48 @@
 // index.js
 const express = require("express");
 const path = require("path");
+const rateLimit = require("express-rate-limit");
 const { runAgent, scheduleTrollReplies, pollMentions, trollStatuses } = require("./agent");
-require("dotenv").config();
+const { log, getLogs } = require("./logger");
+const config = require("./config");
 
 const app = express();
-const port = process.env.PORT || 3000;
 
-// Simple logging helper.
-const serverLogs = [];
-function logMessage(...args) {
-  const timestamp = new Date().toLocaleString();
-  const message = `[${timestamp}] ${args.join(" ")}`;
-  console.log(message);
-  serverLogs.push(message);
-}
+// Rate limiting middleware (protects API endpoints)
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100,
+  message: "Too many requests, please try again later."
+});
+app.use(limiter);
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "public")));
 
-// /trigger endpoint: Uses agent functions.
-app.post("/trigger", async (req, res) => {
-  const { tweetLink, trollLord } = req.body;
-  const trollLordMode = trollLord === "true";
-  logMessage("Troll Lord mode:", trollLordMode);
-  
-  if (trollLordMode) {
-    scheduleTrollReplies(tweetLink);
-    res.json({ status: "Success", message: "Troll Lord mode activated: 10 replies scheduled." });
-  } else {
-    try {
+// /trigger endpoint with input validation and centralized error handling.
+app.post("/trigger", async (req, res, next) => {
+  try {
+    const { tweetLink, trollLord } = req.body;
+    const trollLordMode = trollLord === "true";
+    log("info", "Troll Lord mode:", trollLordMode);
+
+    // Updated input validation to accept both twitter.com and x.com URLs.
+    if (!tweetLink || !/^https:\/\/(twitter\.com|x\.com)\/.*\/status\/\d+/.test(tweetLink)) {
+      return res.status(400).json({ error: "Invalid tweet link provided." });
+    }
+
+    if (trollLordMode) {
+      scheduleTrollReplies(tweetLink);
+      res.json({ status: "Success", message: "Troll Lord mode activated: 10 replies scheduled." });
+    } else {
       const result = await runAgent(tweetLink);
       res.json({ status: "Success", data: result });
-    } catch (error) {
-      logMessage("Error in /trigger:", error);
-      res.status(500).json({ error: error.toString() });
     }
+  } catch (error) {
+    log("error", "Error in /trigger:", error);
+    next(error);
   }
 });
-
-// Removed /test-transfer endpoint (HOT wallet code removed).
 
 // Endpoint to retrieve Troll Lord status.
 app.get("/troll-status", (req, res) => {
@@ -50,11 +53,15 @@ app.get("/troll-status", (req, res) => {
 
 // Endpoint to retrieve server logs.
 app.get("/logs", (req, res) => {
-  res.json({ logs: serverLogs });
+  res.json({ logs: getLogs() });
 });
 
-// Start the server and begin polling for mentions.
-app.listen(port, () => {
-  logMessage(`Server running on port ${port}`);
-  //pollMentions(); // this reply to mentions on daily
+// Global error handling middleware.
+app.use((err, req, res, next) => {
+  res.status(500).json({ error: "Internal server error." });
+});
+
+// Start the server.
+app.listen(config.port, () => {
+  log("info", `Server running on port ${config.port}`);
 });
