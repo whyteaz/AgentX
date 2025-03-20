@@ -19,6 +19,14 @@ app.use(limiter);
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "public")));
 
+// New endpoint to expose Supabase configuration to the client.
+app.get("/api/config", (req, res) => {
+  res.json({
+    supabaseUrl: config.supabaseUrl,
+    supabaseAnonKey: config.supabaseAnonKey
+  });
+});
+
 // /trigger endpoint with input validation and centralized error handling.
 app.post("/trigger", async (req, res, next) => {
   try {
@@ -64,4 +72,6 @@ app.use((err, req, res, next) => {
 // Start the server.
 app.listen(config.port, () => {
   log("info", `Server running on port ${config.port}`);
+  // Optionally, start polling for mentions:
+  // pollMentions();
 });
