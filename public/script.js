@@ -207,43 +207,49 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (submitBtn) submitBtn.disabled = false;
             return;
           }
-          if (!data.data) {
+          
+          // Check for response structure.
+          if (data.data) {
+            // Regular agent mode response.
+            const replyResp = data.data.replyResponse;
+            const twitterReplyId = replyResp?.data?.id || replyResp?.id || null;
+            const twitterReplyUrl = twitterReplyId 
+              ? `https://twitter.com/i/web/status/${twitterReplyId}` 
+              : "N/A";
+  
+            if (responseArea) {
+              responseArea.innerHTML = `
+                <div class="space-y-4">
+                  <div>
+                    <h3 class="text-xl font-semibold text-blue-700">Tweet ID</h3>
+                    <p class="text-gray-800">${data.data.tweetId}</p>
+                  </div>
+                  <div>
+                    <h3 class="text-xl font-semibold text-blue-700">Tweet Content</h3>
+                    <p class="text-gray-800">${data.data.tweetContent}</p>
+                  </div>
+                  <div>
+                    <h3 class="text-xl font-semibold text-blue-700">Trolling Response</h3>
+                    <p class="text-gray-800">${data.data.trollResponse}</p>
+                  </div>
+                  <div>
+                    <h3 class="text-xl font-semibold text-blue-700">Twitter Reply URL</h3>
+                    <p class="text-gray-800">${
+                      twitterReplyUrl !== "N/A"
+                        ? `<a href="${twitterReplyUrl}" target="_blank" class="text-blue-600 underline">${twitterReplyUrl}</a>`
+                        : "N/A"
+                    }</p>
+                  </div>
+                </div>
+              `;
+            }
+          } else if (data.message) {
+            // Troll Lord mode response.
+            if (responseArea) {
+              responseArea.innerHTML = `<p class="text-green-600 font-semibold">${data.message}</p>`;
+            }
+          } else {
             if (responseArea) responseArea.innerHTML = `<p class="text-red-600 font-semibold">Error: Unexpected response format.</p>`;
-            if (submitBtn) submitBtn.disabled = false;
-            return;
-          }
-
-          const replyResp = data.data.replyResponse;
-          const twitterReplyId = replyResp?.data?.id || replyResp?.id || null;
-          const twitterReplyUrl = twitterReplyId 
-            ? `https://twitter.com/i/web/status/${twitterReplyId}` 
-            : "N/A";
-
-          if (responseArea) {
-            responseArea.innerHTML = `
-              <div class="space-y-4">
-                <div>
-                  <h3 class="text-xl font-semibold text-blue-700">Tweet ID</h3>
-                  <p class="text-gray-800">${data.data.tweetId}</p>
-                </div>
-                <div>
-                  <h3 class="text-xl font-semibold text-blue-700">Tweet Content</h3>
-                  <p class="text-gray-800">${data.data.tweetContent}</p>
-                </div>
-                <div>
-                  <h3 class="text-xl font-semibold text-blue-700">Trolling Response</h3>
-                  <p class="text-gray-800">${data.data.trollResponse}</p>
-                </div>
-                <div>
-                  <h3 class="text-xl font-semibold text-blue-700">Twitter Reply URL</h3>
-                  <p class="text-gray-800">${
-                    twitterReplyUrl !== "N/A"
-                      ? `<a href="${twitterReplyUrl}" target="_blank" class="text-blue-600 underline">${twitterReplyUrl}</a>`
-                      : "N/A"
-                  }</p>
-                </div>
-              </div>
-            `;
           }
           startTimer();
         } catch (error) {
