@@ -93,7 +93,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     // ----------------------------
     // ORIGINAL UI FUNCTIONALITY
     // ----------------------------
-
     // Toggle collapse for UI sections (e.g., logs or "How It Works").
     function toggleCollapse(contentId) {
       const content = document.getElementById(contentId);
@@ -107,7 +106,25 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Expose toggleCollapse globally (for inline event handlers).
     window.toggleCollapse = toggleCollapse;
 
-    // Timer functionality for disabling the submit button.
+    // ----------------------------
+    // TROLL LORD TOGGLE FUNCTIONALITY
+    // ----------------------------
+    // This will show/hide the Troll Lord image when the checkbox is toggled.
+    const trollLordCheckbox = document.getElementById('trollLord');
+    const trolllordImg = document.getElementById('trolllordImg');
+    if (trollLordCheckbox && trolllordImg) {
+      trollLordCheckbox.addEventListener('change', () => {
+        if (trollLordCheckbox.checked) {
+          trolllordImg.classList.remove('hidden');
+        } else {
+          trolllordImg.classList.add('hidden');
+        }
+      });
+    }
+    
+    // ----------------------------
+    // TIMER FUNCTIONALITY
+    // ----------------------------
     const COUNTDOWN_DURATION = 900; // 15 minutes in seconds.
     const TIMER_KEY = 'submissionTimerEnd';
     const submitBtn = document.getElementById('submitBtn');
@@ -143,7 +160,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (submitBtn) submitBtn.disabled = false;
     }
 
-    // API call helper: triggers your backend process.
+    // ----------------------------
+    // API CALL & FORM SUBMISSION
+    // ----------------------------
     async function callTrigger(replyCount) {
       const tweetLink = document.getElementById('tweetLink').value;
       const trollLordCheckbox = document.getElementById('trollLord');
@@ -164,7 +183,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     }
 
-    // Form submission handler for your main functionality.
     const form = document.getElementById('tweetForm');
     const responseArea = document.getElementById('responseArea');
     if (form) {
@@ -235,7 +253,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       });
     }
 
-    // Poll server logs every 5 seconds.
+    // ----------------------------
+    // POLL SERVER LOGS
+    // ----------------------------
     function pollLogs() {
       fetch("/logs")
         .then(response => response.json())
