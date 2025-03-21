@@ -1,21 +1,20 @@
 document.addEventListener('DOMContentLoaded', async () => {
   // ----------------------------
-  // AUTHENTICATION SETUP
+  // FETCH SUPABASE CONFIGURATION
   // ----------------------------
-  // Fetch Supabase configuration from our server endpoint
   let supaConfig;
   try {
-    const response = await fetch('/api/config');
-    supaConfig = await response.json();
+    const res = await fetch('/api/config');
+    supaConfig = await res.json();
   } catch (error) {
     console.error("Error fetching Supabase config:", error);
     return;
   }
-
-  // Initialize Supabase client using the fetched configuration
+  
+  // Initialize Supabase client using the fetched configuration.
   const supabaseClient = supabase.createClient(supaConfig.supabaseUrl, supaConfig.supabaseAnonKey);
-
-  // Determine current page by pathname (login.html vs. protected pages)
+  
+  // Determine if this is the login page.
   const isLoginPage = window.location.pathname.endsWith("login.html");
 
   if (isLoginPage) {
@@ -26,22 +25,38 @@ document.addEventListener('DOMContentLoaded', async () => {
     const errorMessage = document.getElementById('error-message');
     const signUpLink = document.getElementById('sign-up');
 
-    // Handle sign-in
+    // Handle sign-in.
     loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
       
-      const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+      const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
       if (error) {
         errorMessage.textContent = error.message;
       } else {
-        // On successful login, redirect to the protected homepage.
-        window.location.href = '/';
+        // On successful login, retrieve the access token.
+        const token = data.session?.access_token;
+        if (token) {
+          // Call the server endpoint to set a secure cookie with the token.
+          const setCookieRes = await fetch('/api/set-cookie', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token })
+          });
+          if (setCookieRes.ok) {
+            // Redirect to the protected page.
+            window.location.href = '/';
+          } else {
+            errorMessage.textContent = 'Failed to set auth cookie.';
+          }
+        } else {
+          errorMessage.textContent = 'Login succeeded but no token received.';
+        }
       }
     });
 
-    // Handle sign-up
+    // Handle sign-up.
     signUpLink.addEventListener('click', async (e) => {
       e.preventDefault();
       const email = document.getElementById('email').value;
@@ -58,14 +73,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     // ----------------------------
     // PROTECTED PAGE FUNCTIONALITY
     // ----------------------------
-    // Check if the user is authenticated; if not, redirect to login page.
+    // (Note: The server already ensures that only authenticated requests receive index.html.)
     const { data: { session } } = await supabaseClient.auth.getSession();
     if (!session) {
+      // This is an extra client-side check.
       window.location.href = '/login.html';
       return;
     }
-
-    // Optional: Set up sign-out functionality (if your protected page includes a sign-out button).
+    
+    // Optional: Set up sign-out functionality.
     const signOutBtn = document.getElementById('sign-out');
     if (signOutBtn) {
       signOutBtn.addEventListener('click', async () => {
@@ -77,8 +93,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // ----------------------------
     // ORIGINAL UI FUNCTIONALITY
     // ----------------------------
-
-    // Toggle collapse for UI sections (e.g., logs, how it works)
+    // Toggle collapse for UI sections (e.g., logs or "How It Works").
     function toggleCollapse(contentId) {
       const content = document.getElementById(contentId);
       const iconId = contentId === 'logContent' ? 'logToggleIcon' : 'howItWorksToggleIcon';
@@ -88,11 +103,29 @@ document.addEventListener('DOMContentLoaded', async () => {
         icon.classList.toggle('rotate-180');
       }
     }
-    // Expose toggleCollapse globally if needed by your HTML inline handlers.
+    // Expose toggleCollapse globally (for inline event handlers).
     window.toggleCollapse = toggleCollapse;
 
-    // Timer functionality for disabling the submit button.
-    const COUNTDOWN_DURATION = 900; // 15 minutes in seconds
+    // ----------------------------
+    // TROLL LORD TOGGLE FUNCTIONALITY
+    // ----------------------------
+    // This will show/hide the Troll Lord image when the checkbox is toggled.
+    const trollLordCheckbox = document.getElementById('trollLord');
+    const trolllordImg = document.getElementById('trolllordImg');
+    if (trollLordCheckbox && trolllordImg) {
+      trollLordCheckbox.addEventListener('change', () => {
+        if (trollLordCheckbox.checked) {
+          trolllordImg.classList.remove('hidden');
+        } else {
+          trolllordImg.classList.add('hidden');
+        }
+      });
+    }
+    
+    // ----------------------------
+    // TIMER FUNCTIONALITY
+    // ----------------------------
+    const COUNTDOWN_DURATION = 900; // 15 minutes in seconds.
     const TIMER_KEY = 'submissionTimerEnd';
     const submitBtn = document.getElementById('submitBtn');
     const timerEl = document.getElementById('timer');
@@ -119,7 +152,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     }
 
-    // Check timer on page load
+    // Check timer on page load.
     const storedEndTime = localStorage.getItem(TIMER_KEY);
     if (storedEndTime && Date.now() < parseInt(storedEndTime, 10)) {
       startTimer(parseInt(storedEndTime, 10));
@@ -127,7 +160,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (submitBtn) submitBtn.disabled = false;
     }
 
-    // API call helper: triggers the backend process.
+    // ----------------------------
+    // API CALL & FORM SUBMISSION
+    // ----------------------------
     async function callTrigger(replyCount) {
       const tweetLink = document.getElementById('tweetLink').value;
       const trollLordCheckbox = document.getElementById('trollLord');
@@ -148,7 +183,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     }
 
-    // Form submission handler for your main functionality.
     const form = document.getElementById('tweetForm');
     const responseArea = document.getElementById('responseArea');
     if (form) {
@@ -173,43 +207,49 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (submitBtn) submitBtn.disabled = false;
             return;
           }
-          if (!data.data) {
+          
+          // Check for response structure.
+          if (data.data) {
+            // Regular agent mode response.
+            const replyResp = data.data.replyResponse;
+            const twitterReplyId = replyResp?.data?.id || replyResp?.id || null;
+            const twitterReplyUrl = twitterReplyId 
+              ? `https://twitter.com/i/web/status/${twitterReplyId}` 
+              : "N/A";
+  
+            if (responseArea) {
+              responseArea.innerHTML = `
+                <div class="space-y-4">
+                  <div>
+                    <h3 class="text-xl font-semibold text-blue-700">Tweet ID</h3>
+                    <p class="text-gray-800">${data.data.tweetId}</p>
+                  </div>
+                  <div>
+                    <h3 class="text-xl font-semibold text-blue-700">Tweet Content</h3>
+                    <p class="text-gray-800">${data.data.tweetContent}</p>
+                  </div>
+                  <div>
+                    <h3 class="text-xl font-semibold text-blue-700">Trolling Response</h3>
+                    <p class="text-gray-800">${data.data.trollResponse}</p>
+                  </div>
+                  <div>
+                    <h3 class="text-xl font-semibold text-blue-700">Twitter Reply URL</h3>
+                    <p class="text-gray-800">${
+                      twitterReplyUrl !== "N/A"
+                        ? `<a href="${twitterReplyUrl}" target="_blank" class="text-blue-600 underline">${twitterReplyUrl}</a>`
+                        : "N/A"
+                    }</p>
+                  </div>
+                </div>
+              `;
+            }
+          } else if (data.message) {
+            // Troll Lord mode response.
+            if (responseArea) {
+              responseArea.innerHTML = `<p class="text-green-600 font-semibold">${data.message}</p>`;
+            }
+          } else {
             if (responseArea) responseArea.innerHTML = `<p class="text-red-600 font-semibold">Error: Unexpected response format.</p>`;
-            if (submitBtn) submitBtn.disabled = false;
-            return;
-          }
-
-          const replyResp = data.data.replyResponse;
-          const twitterReplyId = replyResp?.data?.id || replyResp?.id || null;
-          const twitterReplyUrl = twitterReplyId 
-            ? `https://twitter.com/i/web/status/${twitterReplyId}` 
-            : "N/A";
-
-          if (responseArea) {
-            responseArea.innerHTML = `
-              <div class="space-y-4">
-                <div>
-                  <h3 class="text-xl font-semibold text-blue-700">Tweet ID</h3>
-                  <p class="text-gray-800">${data.data.tweetId}</p>
-                </div>
-                <div>
-                  <h3 class="text-xl font-semibold text-blue-700">Tweet Content</h3>
-                  <p class="text-gray-800">${data.data.tweetContent}</p>
-                </div>
-                <div>
-                  <h3 class="text-xl font-semibold text-blue-700">Trolling Response</h3>
-                  <p class="text-gray-800">${data.data.trollResponse}</p>
-                </div>
-                <div>
-                  <h3 class="text-xl font-semibold text-blue-700">Twitter Reply URL</h3>
-                  <p class="text-gray-800">${
-                    twitterReplyUrl !== "N/A"
-                      ? `<a href="${twitterReplyUrl}" target="_blank" class="text-blue-600 underline">${twitterReplyUrl}</a>`
-                      : "N/A"
-                  }</p>
-                </div>
-              </div>
-            `;
           }
           startTimer();
         } catch (error) {
@@ -219,7 +259,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       });
     }
 
-    // Poll server logs every 5 seconds.
+    // ----------------------------
+    // POLL SERVER LOGS
+    // ----------------------------
     function pollLogs() {
       fetch("/logs")
         .then(response => response.json())
@@ -233,6 +275,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     pollLogs();
   }
 
-  // Optionally expose the supabase client globally.
+  // Expose supabaseClient globally if needed.
   window.supabaseClient = supabaseClient;
 });
