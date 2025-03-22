@@ -7,6 +7,7 @@ const config = require("./config");
 const { log } = require("./logger");
 
 const app = express();
+app.set("trust proxy", true); // Enable trust proxy for accurate IP detection
 
 // Rate limiting middleware
 const limiter = rateLimit({
