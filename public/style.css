@@ -653,6 +653,7 @@ button:disabled {
   max-height: 350px;
   overflow: auto;
   padding: 0;
+  overscroll-behavior: contain;
 }
 
 .log-output {

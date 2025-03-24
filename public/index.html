@@ -8,6 +8,7 @@
   <link href="https://api.fontshare.com/v2/css?f[]=satoshi@900,700,500,400&display=swap" rel="stylesheet">
   <!-- fullPage.js CSS -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullPage.js/4.0.20/fullpage.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fullPage.js/4.0.20/vendors/scrolloverflow.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
   <!-- Custom CSS -->
   <link rel="stylesheet" href="style.css">
@@ -136,6 +137,10 @@
         menu: '.nav-links',
         scrollingSpeed: 700,
         css3: true,
+        // Allow normal scrolling within logs content
+        normalScrollElements: '.logs-content, #logOutput',
+        // Enable scroll overflow for sections with content exceeding viewport
+        scrollOverflow: true,
         afterLoad: function(origin, destination, direction) {
           // Remove active class from all menu items
           document.querySelectorAll('.nav-links a').forEach(item => {
