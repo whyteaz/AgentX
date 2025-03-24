@@ -143,4 +143,30 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     });
   }
+
+  // Add to script.js
+  window.toggleLogs = function() {
+    const content = document.getElementById('logContent');
+    const icon = document.getElementById('logToggleIcon');
+    
+    if (content && icon) {
+      content.classList.toggle('hidden');
+      icon.style.transform = content.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
+    }
+  }
+
+  // Function to poll logs
+  function pollLogs() {
+    fetch("/logs")
+      .then(response => response.json())
+      .then(data => {
+        const logOutput = document.getElementById("logOutput");
+        if (logOutput) logOutput.innerText = data.logs.join("\n");
+      })
+      .catch(err => console.error("Error fetching logs:", err));
+  }
+  // Poll logs every 5 seconds
+  setInterval(pollLogs, 5000);
+  pollLogs(); // Initial poll
+
 });

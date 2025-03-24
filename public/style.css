@@ -611,3 +611,83 @@ button:disabled {
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+
+.toggle-icon {
+  width: 20px;
+  height: 20px;
+  transition: transform 0.3s;
+}
+.hidden {
+  display: none;
+} 
+
+/* Terminal-like Server Logs Styling */
+.server-logs-section {
+  max-width: 800px;
+  margin: 50px auto 0;
+  background: #1a1a1a;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+}
+
+.logs-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 15px;
+  background: #2a2a2a;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px 8px 0 0;
+}
+
+.logs-header h3 {
+  color: #00ff00;
+  margin: 0;
+  font-family: 'Courier New', monospace;
+  font-weight: 500;
+}
+
+.logs-content {
+  max-height: 350px;
+  overflow: auto;
+  padding: 0;
+}
+
+.log-output {
+  padding: 15px;
+  margin: 0;
+  color: #f0f0f0;
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  text-align: left;
+  letter-spacing: 0;
+  background: #1a1a1a;
+}
+
+.log-output::before {
+  content: "";
+  display: block;
+  height: 4px;
+}
+
+/* Custom scrollbar for terminals */
+.logs-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.logs-content::-webkit-scrollbar-track {
+  background: #1a1a1a;
+}
+
+.logs-content::-webkit-scrollbar-thumb {
+  background: #444;
+  border-radius: 4px;
+}
+
+.logs-content::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}

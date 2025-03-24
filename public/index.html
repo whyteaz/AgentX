@@ -111,9 +111,17 @@
     <!-- Section 4 -->
     <div class="section" id="section4">
       <div class="content">
-        <h2>Ready to Troll?</h2>
-        <p>Troll like a pro, log like a boss — Powered by AI and Blockchain!</p>
-        <a href="#app" class="button">Get Started Now</a>
+        <div class="server-logs-section">
+          <div class="logs-header" onclick="toggleLogs()">
+            <h3>Server Logs</h3>
+            <svg id="logToggleIcon" class="toggle-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+            </svg>
+          </div>
+          <div id="logContent" class="logs-content hidden">
+            <pre id="logOutput" class="log-output"></pre>
+          </div>
+        </div>
       </div>
     </div>
   </div>
