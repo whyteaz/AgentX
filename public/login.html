@@ -2,35 +2,241 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Login - Troll As A Service</title>
+  <title>Login - AgentX</title>
+  <!-- Satoshi font -->
+  <link href="https://api.fontshare.com/v2/css?f[]=satoshi@900,700,500,400&display=swap" rel="stylesheet">
   <!-- Tailwind CSS for styling -->
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <!-- Supabase JS Client -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-  <!-- Client-side JS -->
-  <script src="script.js" defer></script>
+  <style>
+    body {
+      font-family: 'Satoshi', sans-serif;
+      background: linear-gradient(135deg, #093028 0%, #237A57 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .login-container {
+      background-color: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      padding: 40px;
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+      width: 100%;
+      max-width: 400px;
+    }
+    
+    .form-title {
+      font-weight: 900;
+      font-size: 28px;
+      color: white;
+      margin-bottom: 24px;
+      text-align: center;
+      letter-spacing: -0.5px;
+    }
+    
+    .form-group {
+      margin-bottom: 20px;
+    }
+    
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      color: rgba(255, 255, 255, 0.9);
+      font-weight: 500;
+    }
+    
+    .form-group input {
+      width: 100%;
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
+      font-size: 16px;
+      color: white;
+      transition: all 0.3s;
+      font-family: 'Satoshi', sans-serif;
+    }
+    
+    .form-group input:focus {
+      outline: none;
+      border-color: rgba(255, 255, 255, 0.5);
+      box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
+    }
+    
+    .button {
+      background: rgba(255, 255, 255, 0.15);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      width: 100%;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-family: 'Satoshi', sans-serif;
+      letter-spacing: 0.5px;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .button:hover {
+      background: rgba(255, 255, 255, 0.25);
+    }
+    
+    .button::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      transition: 0.5s;
+    }
+    
+    .button:hover::before {
+      left: 100%;
+    }
+    
+    .text-footer {
+      text-align: center;
+      margin-top: 16px;
+      color: rgba(255, 255, 255, 0.7);
+    }
+    
+    .text-footer a {
+      color: white;
+      text-decoration: none;
+      font-weight: 500;
+      transition: opacity 0.3s;
+    }
+    
+    .text-footer a:hover {
+      opacity: 0.8;
+    }
+    
+    .error-message {
+      color: #ff6b6b;
+      margin-top: 16px;
+      text-align: center;
+    }
+  </style>
 </head>
-<body class="bg-gray-50 dark:bg-gray-900">
-  <div class="min-h-screen flex items-center justify-center">
-    <div class="bg-white p-8 rounded shadow-md w-full max-w-md">
-      <h1 class="text-2xl font-bold mb-6 text-center">Login</h1>
-      <form id="login-form">
-        <div class="mb-4">
-          <label class="block text-gray-700">Email</label>
-          <input type="email" id="email" class="w-full p-2 border rounded" required />
-        </div>
-        <div class="mb-6">
-          <label class="block text-gray-700">Password</label>
-          <input type="password" id="password" class="w-full p-2 border rounded" required />
-        </div>
-        <button type="submit" class="w-full bg-blue-600 text-white p-2 rounded">Sign In</button>
-      </form>
-      <p class="mt-4 text-center text-gray-600">
-        Don't have an account?
-        <a href="#" id="sign-up" class="text-blue-600">Sign Up</a>
-      </p>
-      <p id="error-message" class="text-red-600 mt-4 text-center"></p>
-    </div>
+<body>
+  <div class="login-container">
+    <h1 class="form-title">AgentX Login</h1>
+    <form id="login-form">
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" id="email" required />
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" required />
+      </div>
+      <button type="submit" class="button">Sign In</button>
+    </form>
+    <p class="text-footer">
+      Don't have an account?
+      <a href="#" id="sign-up">Sign Up</a>
+    </p>
+    <p id="error-message" class="error-message"></p>
   </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        // Fetch Supabase configuration
+        const res = await fetch('/api/config');
+        const supaConfig = await res.json();
+        
+        // Initialize Supabase client
+        const supabaseClient = supabase.createClient(supaConfig.supabaseUrl, supaConfig.supabaseAnonKey);
+        
+        const loginForm = document.getElementById('login-form');
+        const errorMessage = document.getElementById('error-message');
+        const signUpLink = document.getElementById('sign-up');
+        
+        // Handle sign-in
+        loginForm.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const email = document.getElementById('email').value;
+          const password = document.getElementById('password').value;
+          
+          errorMessage.textContent = "Signing in...";
+          
+          try {
+            const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+            
+            if (error) {
+              errorMessage.textContent = error.message;
+              return;
+            }
+            
+            // On successful login, retrieve the access token
+            const token = data.session?.access_token;
+            if (token) {
+              // Call the server endpoint to set a secure cookie with the token
+              const setCookieRes = await fetch('/api/set-cookie', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token })
+              });
+              
+              if (setCookieRes.ok) {
+                // Redirect to the protected page
+                window.location.href = '/';
+              } else {
+                errorMessage.textContent = 'Failed to set auth cookie.';
+              }
+            } else {
+              errorMessage.textContent = 'Login succeeded but no token received.';
+            }
+          } catch (err) {
+            errorMessage.textContent = `Login error: ${err.message}`;
+            console.error("Login error:", err);
+          }
+        });
+        
+        // Handle sign-up
+        signUpLink.addEventListener('click', async (e) => {
+          e.preventDefault();
+          const email = document.getElementById('email').value;
+          const password = document.getElementById('password').value;
+          
+          if (!email || !password) {
+            errorMessage.textContent = "Please enter email and password";
+            return;
+          }
+          
+          errorMessage.textContent = "Creating account...";
+          
+          try {
+            const { error } = await supabaseClient.auth.signUp({ email, password });
+            
+            if (error) {
+              errorMessage.textContent = error.message;
+            } else {
+              errorMessage.textContent = 'Sign-up successful! Please check your email to confirm your account.';
+            }
+          } catch (err) {
+            errorMessage.textContent = `Sign-up error: ${err.message}`;
+            console.error("Sign-up error:", err);
+          }
+        });
+        
+      } catch (error) {
+        console.error("Error initializing login page:", error);
+        document.getElementById('error-message').textContent = "Failed to initialize login. Please try again later.";
+      }
+    });
+  </script>
 </body>
 </html>
