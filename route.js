@@ -3,7 +3,14 @@ const express = require("express");
 const path = require("path");
 const config = require("./config");
 const { log, getLogs } = require("./logger");
-const { runAgent, scheduleTrollReplies, trollStatuses } = require("./agent");
+const { 
+  runAgent, 
+  scheduleTrollReplies, 
+  runBootlickAgent, 
+  scheduleBootlickReplies, 
+  trollStatuses, 
+  bootlickStatuses 
+} = require("./agent");
 const { requireAuth } = require("./middleware");
 
 const router = express.Router();
@@ -37,7 +44,7 @@ router.get("/login.html", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "login.html"));
 });
 
-// /trigger endpoint: processes requests to run the agent functions.
+// /trigger endpoint: processes requests to run the trolling agent.
 router.post("/trigger", requireAuth, async (req, res, next) => {
   try {
     const { tweetLink, trollLord } = req.body;
@@ -62,11 +69,65 @@ router.post("/trigger", requireAuth, async (req, res, next) => {
   }
 });
 
+// /bootlick endpoint: processes requests to run the bootlicking agent.
+router.post("/bootlick", requireAuth, async (req, res, next) => {
+  try {
+    const { profileUrls, multipleProfiles } = req.body;
+    const multipleProfilesMode = multipleProfiles === "true";
+    log("info", "Multiple Profiles mode:", multipleProfilesMode);
+
+    if (!profileUrls || profileUrls.trim() === "") {
+      return res.status(400).json({ error: "No profile URLs provided." });
+    }
+
+    // For single profile mode, validate the URL format
+    if (!multipleProfilesMode) {
+      const profileUrl = profileUrls.trim();
+      
+      // Validate profile URL (accepts URLs from twitter.com or x.com)
+      if (!/^https:\/\/(twitter\.com|x\.com)\/[^/]+\/?$/.test(profileUrl)) {
+        return res.status(400).json({ error: "Invalid profile URL format. Should be like: https://twitter.com/username" });
+      }
+      
+      const result = await runBootlickAgent(profileUrl);
+      res.json({ status: "Success", data: result });
+    } else {
+      // For multiple profiles mode, schedule bootlicking replies
+      const result = await scheduleBootlickReplies(profileUrls);
+      
+      // Check if there was an error with the first profile
+      if (result.firstError) {
+        res.json({ 
+          status: "Warning", 
+          message: `Multiple Profiles mode activated but encountered an issue with the first profile: ${result.firstError}. Remaining profiles will be processed as scheduled.`,
+          statusKey: result.statusKey
+        });
+      } else {
+        res.json({ 
+          status: "Success", 
+          message: `Multiple Profiles mode activated: ${result.totalProfiles} replies scheduled with 16-minute intervals.`,
+          statusKey: result.statusKey
+        });
+      }
+    }
+  } catch (error) {
+    log("error", "Error in /bootlick:", error);
+    next(error);
+  }
+});
+
 // Endpoint to retrieve Troll Lord status.
 router.get("/troll-status", requireAuth, (req, res) => {
   const tweetLink = req.query.tweetLink;
   if (!tweetLink) return res.status(400).json({ error: "Missing tweetLink parameter" });
   res.json({ status: "Success", data: trollStatuses[tweetLink] || [] });
+});
+
+// Endpoint to retrieve Bootlick status.
+router.get("/bootlick-status", requireAuth, (req, res) => {
+  const statusKey = req.query.statusKey;
+  if (!statusKey) return res.status(400).json({ error: "Missing statusKey parameter" });
+  res.json({ status: "Success", data: bootlickStatuses[statusKey] || [] });
 });
 
 // Endpoint to retrieve server logs.

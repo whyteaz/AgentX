@@ -259,6 +259,41 @@ nav {
   background: rgba(0, 0, 0, 0.03);
 }
 
+textarea {
+  width: 100%;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  font-size: 16px;
+  color: #333;
+  transition: all 0.3s;
+  font-family: 'Satoshi', sans-serif;
+  resize: none;
+  overflow-y: auto;
+}
+
+textarea.single-profile {
+  height: 52px;
+  overflow-y: hidden;
+}
+
+textarea.multiple-profiles {
+  min-height: 120px;
+  overflow-y: auto;
+}
+
+textarea::placeholder {
+  color: rgba(0, 0, 0, 0.4);
+}
+
+textarea:focus {
+  outline: none;
+  border-color: rgba(0, 0, 0, 0.3);
+  box-shadow: 0 0 25px rgba(0, 0, 0, 0.05);
+  background: rgba(0, 0, 0, 0.03);
+}
+
 .checkbox {
   display: flex;
   align-items: center;
@@ -342,7 +377,7 @@ button:disabled {
   border-bottom: none;
 }
 
-#responseArea {
+#responseArea, .response-area, #bootlickResponseArea {
   margin-top: 0;
   border-top: none;
   border-radius: 0 0 24px 24px;
