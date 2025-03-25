@@ -2,6 +2,7 @@
 const { replyTweet, fetchTweet, fetchLatestTweet } = require("./twitter");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const { log } = require("./logger");
+const { createSchedule, updateSchedule } = require("./supabase");
 require("dotenv").config();
 
 // Constants for Agent modes
@@ -21,7 +22,7 @@ const trollModel = genAI.getGenerativeModel({
 // Create bootlick model
 const bootlickModel = genAI.getGenerativeModel({
   model: "gemini-2.0-flash-lite",
-  systemInstruction: "Your task is to excessively praise and flatter the author of a tweet. Be extremely enthusiastic and complimentary about both the tweet content and the author. Your bootlicking response should be sycophantic but still believable and not more than 280 characters. Output only the tweet response."
+  systemInstruction: "Your task is to excessively praise and flatter the author of a tweet. Be extremely enthusiastic and complimentary about the tweet content. Your bootlicking response should be sycophantic but still believable and not more than 280 characters. Output only the tweet response."
 });
 
 log("info", "Google Gemini API models initialized.");
@@ -163,20 +164,60 @@ async function replyToMention(tweetId, tweetText) {
   }
 }
 
-// Schedules 10 replies (Troll Lord Mode) with a 16-minute interval
-async function scheduleTrollReplies(tweetLink) {
+// Schedules 10 replies (Troll Lord Mode) with a 16-minute interval.
+async function scheduleTrollReplies(tweetLink, userId) {
   let count = 1;
   log("info", "Scheduling Troll Lord replies for tweet:", tweetLink);
+  
+  // Create a schedule in Supabase
+  const scheduleData = {
+    tweetLink,
+    totalReplies: MAX_REPLY_COUNT,
+    completedReplies: 0,
+    responses: []
+  };
+  
+  // Create schedule record in database
+  const schedule = await createSchedule('troll', userId, scheduleData);
+  const scheduleId = schedule.id;
+  
+  // Keep in-memory status for backward compatibility
   trollStatuses[tweetLink] = [];
 
   // Immediate reply
   try {
     const result = await runAgent(tweetLink, count);
     log("info", `Troll Lord reply ${count} sent:`, result);
+    
+    // Update in-memory status
     trollStatuses[tweetLink].push({ replyNumber: count, result });
+    
+    // Update database record
+    scheduleData.completedReplies = count;
+    scheduleData.responses.push({ 
+      replyNumber: count, 
+      timestamp: new Date().toISOString(),
+      success: true,
+      tweetId: result.tweetId,
+      responseText: result.trollResponse,
+      replyId: result.replyResponse?.data?.id || result.replyResponse?.id,
+    });
+    await updateSchedule(scheduleId, scheduleData);
   } catch (error) {
+    const errorMessage = error.toString();
     log("error", `Error in Troll Lord reply ${count}:`, error);
-    trollStatuses[tweetLink].push({ replyNumber: count, error: error.toString() });
+    
+    // Update in-memory status
+    trollStatuses[tweetLink].push({ replyNumber: count, error: errorMessage });
+    
+    // Update database record
+    scheduleData.responses.push({ 
+      replyNumber: count, 
+      timestamp: new Date().toISOString(),
+      success: false,
+      error: errorMessage
+    });
+    await updateSchedule(scheduleId, scheduleData);
   }
   count++;
 
@@ -185,21 +226,55 @@ async function scheduleTrollReplies(tweetLink) {
       try {
         const result = await runAgent(tweetLink, count);
         log("info", `Troll Lord reply ${count} sent:`, result);
+        
+        // Update in-memory status
         trollStatuses[tweetLink].push({ replyNumber: count, result });
+        
+        // Update database record
+        scheduleData.completedReplies = count;
+        scheduleData.responses.push({ 
+          replyNumber: count, 
+          timestamp: new Date().toISOString(),
+          success: true,
+          tweetId: result.tweetId,
+          responseText: result.trollResponse,
+          replyId: result.replyResponse?.data?.id || result.replyResponse?.id,
+        });
+        await updateSchedule(scheduleId, scheduleData);
       } catch (error) {
+        const errorMessage = error.toString();
         log("error", `Error in Troll Lord reply ${count}:`, error);
-        trollStatuses[tweetLink].push({ replyNumber: count, error: error.toString() });
+        
+        // Update in-memory status
+        trollStatuses[tweetLink].push({ replyNumber: count, error: errorMessage });
+        
+        // Update database record
+        scheduleData.responses.push({ 
+          replyNumber: count, 
+          timestamp: new Date().toISOString(),
+          success: false,
+          error: errorMessage
+        });
+        await updateSchedule(scheduleId, scheduleData);
       }
       count++;
     } else {
       clearInterval(intervalId);
       log("info", "Completed scheduling all Troll Lord replies.");
+      
+      // Mark schedule as completed
+      await updateSchedule(scheduleId, scheduleData, 'completed');
     }
   }, REPLY_INTERVAL_MS);
+  
+  return {
+    scheduleId,
+    totalReplies: MAX_REPLY_COUNT
+  };
 }
 
 // Schedules bootlicking replies to multiple profiles with a 16-minute interval
-async function scheduleBootlickReplies(profileUrls) {
+async function scheduleBootlickReplies(profileUrls, userId) {
   const profiles = profileUrls.split('\n').filter(url => url.trim() !== '');
   
   if (profiles.length === 0) {
@@ -208,6 +283,19 @@ async function scheduleBootlickReplies(profileUrls) {
   
   log("info", `Scheduling Bootlick replies for ${profiles.length} profiles:`, profiles);
   
+  // Create a schedule in Supabase
+  const scheduleData = {
+    profileUrls: profiles,
+    totalReplies: profiles.length,
+    completedReplies: 0,
+    responses: []
+  };
+  
+  // Create schedule record in database
+  const schedule = await createSchedule('bootlick', userId, scheduleData);
+  const scheduleId = schedule.id;
+  
+  // Keep in-memory status for backward compatibility
   const statusKey = profiles.join('|');
   bootlickStatuses[statusKey] = [];
   
@@ -218,25 +306,54 @@ async function scheduleBootlickReplies(profileUrls) {
   try {
     const result = await runBootlickAgent(profiles[currentProfileIndex], count);
     log("info", `Bootlick reply ${count} sent to ${profiles[currentProfileIndex]}:`, result);
+    
+    // Update in-memory status
     bootlickStatuses[statusKey].push({ 
       replyNumber: count, 
       profileUrl: profiles[currentProfileIndex],
       result 
     });
+    
+    // Update database record
+    scheduleData.completedReplies = count;
+    scheduleData.responses.push({
+      replyNumber: count,
+      profileUrl: profiles[currentProfileIndex],
+      timestamp: new Date().toISOString(),
+      success: true,
+      tweetId: result.tweetId,
+      username: result.username,
+      responseText: result.bootlickResponse,
+      replyId: result.replyResponse?.data?.id || result.replyResponse?.id
+    });
+    await updateSchedule(scheduleId, scheduleData);
   } catch (error) {
     const errorMessage = error.toString();
     log("error", `Error in Bootlick reply ${count} to ${profiles[currentProfileIndex]}:`, error);
+    
+    // Update in-memory status
     bootlickStatuses[statusKey].push({ 
       replyNumber: count, 
       profileUrl: profiles[currentProfileIndex],
       error: errorMessage
     });
     
-    // Return the status key even when the first profile fails
+    // Update database record
+    scheduleData.responses.push({
+      replyNumber: count,
+      profileUrl: profiles[currentProfileIndex],
+      timestamp: new Date().toISOString(),
+      success: false,
+      error: errorMessage
+    });
+    await updateSchedule(scheduleId, scheduleData);
+    
+    // Return error info even when the first profile fails
     if (currentProfileIndex === 0) {
       return {
         totalProfiles: profiles.length,
         statusKey,
+        scheduleId,
         firstError: errorMessage
       };
     }
@@ -251,18 +368,47 @@ async function scheduleBootlickReplies(profileUrls) {
       try {
         const result = await runBootlickAgent(profiles[currentProfileIndex], count);
         log("info", `Bootlick reply ${count} sent to ${profiles[currentProfileIndex]}:`, result);
+        
+        // Update in-memory status
         bootlickStatuses[statusKey].push({ 
           replyNumber: count, 
           profileUrl: profiles[currentProfileIndex],
           result 
         });
+        
+        // Update database record
+        scheduleData.completedReplies = count;
+        scheduleData.responses.push({
+          replyNumber: count,
+          profileUrl: profiles[currentProfileIndex],
+          timestamp: new Date().toISOString(),
+          success: true,
+          tweetId: result.tweetId,
+          username: result.username,
+          responseText: result.bootlickResponse,
+          replyId: result.replyResponse?.data?.id || result.replyResponse?.id
+        });
+        await updateSchedule(scheduleId, scheduleData);
       } catch (error) {
+        const errorMessage = error.toString();
         log("error", `Error in Bootlick reply ${count} to ${profiles[currentProfileIndex]}:`, error);
+        
+        // Update in-memory status
         bootlickStatuses[statusKey].push({ 
           replyNumber: count, 
           profileUrl: profiles[currentProfileIndex],
-          error: error.toString() 
+          error: errorMessage
         });
+        
+        // Update database record
+        scheduleData.responses.push({
+          replyNumber: count,
+          profileUrl: profiles[currentProfileIndex],
+          timestamp: new Date().toISOString(),
+          success: false,
+          error: errorMessage
+        });
+        await updateSchedule(scheduleId, scheduleData);
       }
       
       currentProfileIndex++;
@@ -270,12 +416,16 @@ async function scheduleBootlickReplies(profileUrls) {
     } else {
       clearInterval(intervalId);
       log("info", "Completed scheduling all Bootlick replies.");
+      
+      // Mark schedule as completed
+      await updateSchedule(scheduleId, scheduleData, 'completed');
     }
   }, REPLY_INTERVAL_MS);
   
   return {
     totalProfiles: profiles.length,
-    statusKey
+    statusKey,
+    scheduleId
   };
 }
 

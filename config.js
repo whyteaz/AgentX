@@ -14,6 +14,7 @@ const requiredEnvVars = [
   "TWITTER_BOOTLICK_ACCESS_SECRET",
   "SUPABASE_URL",
   "SUPABASE_ANON_KEY",
+  "SUPABASE_SERVICE_KEY",
   "SUPABASE_JWT_SECRET"
 ];
 
@@ -39,5 +40,6 @@ module.exports = {
   // Supabase config
   supabaseUrl: process.env.SUPABASE_URL,
   supabaseAnonKey: process.env.SUPABASE_ANON_KEY,
+  supabaseServiceKey: process.env.SUPABASE_SERVICE_KEY,
   supabaseJwtSecret: process.env.SUPABASE_JWT_SECRET
 };

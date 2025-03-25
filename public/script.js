@@ -4,6 +4,259 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
   
+  // Schedule tracking
+window.toggleSchedules = function() {
+  const content = document.getElementById('scheduleContent');
+  const icon = document.getElementById('scheduleToggleIcon');
+  
+  if (content && icon) {
+    content.classList.toggle('hidden');
+    icon.style.transform = content.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
+    
+    // Load schedules when panel is opened
+    if (!content.classList.contains('hidden')) {
+      loadSchedules();
+    }
+  }
+}
+
+// Function to format date
+function formatDate(dateString) {
+  const date = new Date(dateString);
+  return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+}
+
+// Function to load schedules
+async function loadSchedules() {
+  const scheduleList = document.getElementById('scheduleList');
+  const scheduleLoader = document.getElementById('scheduleLoader');
+  const scheduleDetails = document.getElementById('scheduleDetails');
+  
+  if (scheduleList && scheduleLoader) {
+    // Show loader
+    scheduleLoader.classList.remove('hidden');
+    scheduleList.classList.add('hidden');
+    scheduleDetails.classList.add('hidden');
+    
+    try {
+      const response = await fetch('/schedules');
+      const data = await response.json();
+      
+      if (data.status === 'Success' && data.data) {
+        scheduleList.innerHTML = '';
+        
+        if (data.data.length === 0) {
+          scheduleList.innerHTML = '<div class="no-schedules">No schedules found. Start a Troll Lord or Multiple Bootlick session to create schedules.</div>';
+        } else {
+          // Sort schedules by date (newest first)
+          const sortedSchedules = data.data.sort((a, b) => 
+            new Date(b.created_at) - new Date(a.created_at)
+          );
+          
+          sortedSchedules.forEach(schedule => {
+            const card = document.createElement('div');
+            card.className = 'schedule-card';
+            card.setAttribute('data-id', schedule.id);
+            
+            // Determine schedule name based on type
+            let scheduleName = '';
+            if (schedule.type === 'troll') {
+              scheduleName = `Troll Lord: ${schedule.data.tweetLink.substring(0, 30)}...`;
+            } else if (schedule.type === 'bootlick') {
+              scheduleName = `Bootlicking: ${schedule.data.profileUrls.length} profiles`;
+            }
+            
+            // Calculate progress
+            const progress = schedule.data.completedReplies + '/' + schedule.data.totalReplies;
+            
+            // Status label class
+            const statusClass = 
+              schedule.status === 'active' ? 'status-active' : 
+              schedule.status === 'completed' ? 'status-completed' : 'status-failed';
+            
+            card.innerHTML = `
+              <h4>${scheduleName}</h4>
+              <div class="schedule-card-details">
+                <p>Created: ${formatDate(schedule.created_at)}</p>
+                <p>Progress: ${progress}</p>
+                <span class="schedule-card-status ${statusClass}">${schedule.status}</span>
+              </div>
+            `;
+            
+            // Add click handler to show schedule details
+            card.addEventListener('click', () => loadScheduleDetails(schedule.id));
+            
+            scheduleList.appendChild(card);
+          });
+        }
+      } else {
+        scheduleList.innerHTML = '<div class="no-schedules">Error loading schedules: ' + (data.error || 'Unknown error') + '</div>';
+      }
+    } catch (error) {
+      scheduleList.innerHTML = '<div class="no-schedules">Error loading schedules: ' + error.message + '</div>';
+    } finally {
+      // Hide loader and show list
+      scheduleLoader.classList.add('hidden');
+      scheduleList.classList.remove('hidden');
+    }
+  }
+}
+
+// Function to load schedule details
+async function loadScheduleDetails(scheduleId) {
+  const scheduleList = document.getElementById('scheduleList');
+  const scheduleLoader = document.getElementById('scheduleLoader');
+  const scheduleDetails = document.getElementById('scheduleDetails');
+  
+  if (scheduleDetails && scheduleLoader) {
+    // Show loader
+    scheduleLoader.classList.remove('hidden');
+    scheduleList.classList.add('hidden');
+    scheduleDetails.classList.add('hidden');
+    
+    try {
+      const response = await fetch(`/schedule/${scheduleId}`);
+      const data = await response.json();
+      
+      if (data.status === 'Success' && data.data) {
+        const schedule = data.data;
+        
+        // Create back button
+        const backBtn = document.createElement('button');
+        backBtn.className = 'schedule-back-button';
+        backBtn.innerHTML = '<i class="fas fa-arrow-left"></i> Back to schedules';
+        backBtn.addEventListener('click', () => {
+          scheduleDetails.classList.add('hidden');
+          scheduleList.classList.remove('hidden');
+        });
+        
+        // Determine schedule title based on type
+        let scheduleTitle = '';
+        if (schedule.type === 'troll') {
+          scheduleTitle = 'Troll Lord Schedule';
+        } else if (schedule.type === 'bootlick') {
+          scheduleTitle = 'Bootlicking Schedule';
+        }
+        
+        // Create schedule header
+        const header = document.createElement('div');
+        header.className = 'schedule-details-header';
+        header.innerHTML = `<h3>${scheduleTitle}</h3>`;
+        
+        // Create schedule info section
+        const info = document.createElement('div');
+        info.className = 'schedule-details-info';
+        
+        // Add appropriate info based on schedule type
+        if (schedule.type === 'troll') {
+          info.innerHTML = `
+            <p><strong>Tweet:</strong> <a href="${schedule.data.tweetLink}" target="_blank">${schedule.data.tweetLink}</a></p>
+            <p><strong>Created:</strong> ${formatDate(schedule.created_at)}</p>
+            <p><strong>Status:</strong> ${schedule.status}</p>
+            <p><strong>Progress:</strong> ${schedule.data.completedReplies}/${schedule.data.totalReplies}</p>
+          `;
+        } else if (schedule.type === 'bootlick') {
+          const profileLinks = schedule.data.profileUrls.map(url => 
+            `<a href="${url}" target="_blank">${url}</a>`
+          ).join('<br>');
+          
+          info.innerHTML = `
+            <p><strong>Profiles:</strong><br>${profileLinks}</p>
+            <p><strong>Created:</strong> ${formatDate(schedule.created_at)}</p>
+            <p><strong>Status:</strong> ${schedule.status}</p>
+            <p><strong>Progress:</strong> ${schedule.data.completedReplies}/${schedule.data.totalReplies}</p>
+          `;
+        }
+        
+        // Create responses section
+        const responsesHeader = document.createElement('h4');
+        responsesHeader.textContent = 'Responses';
+        
+        const responses = document.createElement('div');
+        responses.className = 'schedule-responses';
+        
+        if (schedule.data.responses && schedule.data.responses.length > 0) {
+          // Sort responses by number
+          const sortedResponses = [...schedule.data.responses].sort((a, b) => a.replyNumber - b.replyNumber);
+          
+          sortedResponses.forEach(response => {
+            const responseEl = document.createElement('div');
+            responseEl.className = 'schedule-response';
+            
+            // Create response header with number and status
+            const responseHeader = document.createElement('div');
+            responseHeader.className = 'schedule-response-header';
+            responseHeader.innerHTML = `
+              <strong>Reply #${response.replyNumber}</strong>
+              <span class="${response.success ? 'schedule-response-success' : 'schedule-response-error'}">
+                ${response.success ? 'Success' : 'Failed'}
+              </span>
+            `;
+            
+            // Create response content
+            const responseContent = document.createElement('div');
+            
+            if (response.success) {
+              if (schedule.type === 'troll') {
+                responseContent.innerHTML = `
+                  <p><strong>Response:</strong> ${response.responseText}</p>
+                  <p><strong>Time:</strong> ${formatDate(response.timestamp)}</p>
+                  ${response.replyId ? `<p><strong>Tweet:</strong> <a href="https://twitter.com/i/web/status/${response.replyId}" target="_blank">View on Twitter</a></p>` : ''}
+                `;
+              } else if (schedule.type === 'bootlick') {
+                responseContent.innerHTML = `
+                  <p><strong>Profile:</strong> <a href="${response.profileUrl}" target="_blank">${response.profileUrl}</a></p>
+                  <p><strong>Response:</strong> ${response.responseText}</p>
+                  <p><strong>Time:</strong> ${formatDate(response.timestamp)}</p>
+                  ${response.replyId ? `<p><strong>Tweet:</strong> <a href="https://twitter.com/i/web/status/${response.replyId}" target="_blank">View on Twitter</a></p>` : ''}
+                `;
+              }
+            } else {
+              responseContent.innerHTML = `
+                <p><strong>Error:</strong> ${response.error}</p>
+                <p><strong>Time:</strong> ${formatDate(response.timestamp)}</p>
+                ${schedule.type === 'bootlick' ? `<p><strong>Profile:</strong> <a href="${response.profileUrl}" target="_blank">${response.profileUrl}</a></p>` : ''}
+              `;
+            }
+            
+            responseEl.appendChild(responseHeader);
+            responseEl.appendChild(responseContent);
+            responses.appendChild(responseEl);
+          });
+        } else {
+          responses.innerHTML = '<div class="schedule-response">No responses yet</div>';
+        }
+        
+        // Assemble the details view
+        scheduleDetails.innerHTML = '';
+        scheduleDetails.appendChild(backBtn);
+        scheduleDetails.appendChild(header);
+        scheduleDetails.appendChild(info);
+        scheduleDetails.appendChild(responsesHeader);
+        scheduleDetails.appendChild(responses);
+      } else {
+        scheduleDetails.innerHTML = `
+          <button class="schedule-back-button" onclick="document.getElementById('scheduleDetails').classList.add('hidden'); document.getElementById('scheduleList').classList.remove('hidden');">
+            <i class="fas fa-arrow-left"></i> Back to schedules
+          </button>
+          <div class="no-schedules">Error loading schedule details: ${data.error || 'Unknown error'}</div>
+        `;
+      }
+    } catch (error) {
+      scheduleDetails.innerHTML = `
+        <button class="schedule-back-button" onclick="document.getElementById('scheduleDetails').classList.add('hidden'); document.getElementById('scheduleList').classList.remove('hidden');">
+          <i class="fas fa-arrow-left"></i> Back to schedules
+        </button>
+        <div class="no-schedules">Error loading schedule details: ${error.message}</div>
+      `;
+    } finally {
+      // Hide loader and show details
+      scheduleLoader.classList.add('hidden');
+      scheduleDetails.classList.remove('hidden');
+    }
+  }
+}
+
   // Checkbox functionality for troll lord and multiple profiles
   const trollLordCheckbox = document.getElementById('trollLord');
   const trolllordImg = document.getElementById('trolllordImg');
@@ -185,7 +438,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         } else if (data.message) {
           // Troll Lord mode response
           if (trollResponseArea) {
-            trollResponseArea.innerHTML = `<p style="color: #10b981; font-weight: 500;">${data.message}</p>`;
+            trollResponseArea.innerHTML = `
+              <p style="color: #10b981; font-weight: 500;">${data.message}</p>
+              ${data.scheduleId ? 
+                `<p style="margin-top: 10px;">
+                  You can <a href="#cta" style="color: #4361ee; text-decoration: underline;"
+                  onclick="loadScheduleDetails('${data.scheduleId}'); return false;">track this schedule</a> in the "Active Schedules" panel.
+                </p>` : ''
+              }
+            `;
           }
         }
         
@@ -264,9 +525,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         } else if (data.message) {
           // Multiple profiles mode response
           if (bootlickResponseArea) {
-            // Use different color based on status
-            const statusColor = data.status === "Warning" ? "#f59e0b" : "#10b981";
-            bootlickResponseArea.innerHTML = `<p style="color: ${statusColor}; font-weight: 500;">${data.message}</p>`;
+            // Multiple profiles mode response
+            if (bootlickResponseArea) {
+              // Use different color based on status
+              const statusColor = data.status === "Warning" ? "#f59e0b" : "#10b981";
+              bootlickResponseArea.innerHTML = `
+                <p style="color: ${statusColor}; font-weight: 500;">${data.message}</p>
+                ${data.scheduleId ? 
+                  `<p style="margin-top: 10px;">
+                    You can <a href="#cta" style="color: #4361ee; text-decoration: underline;"
+                    onclick="loadScheduleDetails('${data.scheduleId}'); return false;">track this schedule</a> in the "Active Schedules" panel.
+                  </p>` : ''
+                }
+              `;
+            }
           }
         }
         
@@ -289,18 +561,66 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
-  // Function to poll logs
+  // Format timestamp into [DD-MM-YYYY, HH:MM:SS] format in local timezone
+  function formatLogTimestamp(logEntry) {
+    // Regular expression to match ISO timestamp in logs [yyyy-mm-ddThh:mm:ss.sssZ]
+    const timestampRegex = /\[(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z)\]/;
+    
+    // Check if the log entry contains a timestamp
+    const match = logEntry.match(timestampRegex);
+    if (!match) return logEntry;
+    
+    // Extract the ISO timestamp
+    const isoTimestamp = match[1];
+    
+    // Parse the timestamp and convert to local timezone
+    const date = new Date(isoTimestamp);
+    
+    // Format the date in the requested format [DD-MM-YYYY, HH:MM:SS]
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    const seconds = date.getSeconds().toString().padStart(2, '0');
+    
+    const formattedDate = `[${year}-${month}-${day}`+`T`+`${hours}:${minutes}:${seconds}]`;
+    
+    // Replace the ISO timestamp with the formatted one
+    return logEntry.replace(timestampRegex, formattedDate);
+  }
+
+  // Function to poll logs with better error handling and timestamp formatting
   function pollLogs() {
     fetch("/logs")
-      .then(response => response.json())
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`HTTP error ${response.status}`);
+        }
+        return response.json();
+      })
       .then(data => {
         const logOutput = document.getElementById("logOutput");
-        if (logOutput) logOutput.innerText = data.logs.join("\n");
+        if (logOutput && data && Array.isArray(data.logs)) {
+          // Format each log entry's timestamp before displaying
+          const formattedLogs = data.logs.map(formatLogTimestamp);
+          logOutput.innerText = formattedLogs.join("\n");
+        } else if (logOutput) {
+          // Handle case where logs aren't available
+          logOutput.innerText = "No logs available yet";
+        }
       })
-      .catch(err => console.error("Error fetching logs:", err));
+      .catch(err => {
+        console.error("Error fetching logs:", err);
+        // Don't try again immediately if rate limited
+        if (err.message.includes("429")) {
+          console.log("Rate limited, will retry later");
+        }
+      });
   }
-  // Poll logs every 5 seconds
-  setInterval(pollLogs, 5000);
+
+  const pollInterval = 15000; // 15 seconds instead of 5
+  setInterval(pollLogs, pollInterval);
   pollLogs(); // Initial poll
 
 });
