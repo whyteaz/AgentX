@@ -90,22 +90,49 @@
     </div>
 
     <!-- Section 3 -->
+    <!-- Section 3 - Bootlicking Agent -->
     <div class="section" id="section3">
       <div class="content">
-        <h2>Key Features</h2>
-        <div class="features">
-          <div class="feature">
-            <h3><i class="fas fa-robot card-icon" style="color: #4361ee;"></i> AI-Powered Replies</h3>
-            <p>Google Gemini generates creative, spicy responses</p>
+        <h2 class="section-title">Bootlicking-as-a-Service</h2>
+        <div class="app-container">
+          <div class="app-grid">
+            <!-- How It Works Section -->
+            <div class="how-it-works">
+              <h3><i class="fas fa-info-circle card-icon" style="color: #4361ee;"></i> How It Works</h3>
+              <p>Our AI Bootlicking Agent uses state-of-the-art AI to deliver sycophantic Twitter replies to your chosen accounts.</p>
+              <div class="modes">
+                <div class="mode">
+                  <h4><i class="fas fa-user card-icon" style="color: #78ffd6;"></i> Standard Mode</h4>
+                  <p>Generate one bootlicking reply to a profile's latest tweet with a 15-minute cooldown.</p>
+                </div>
+                <div class="mode">
+                  <h4><i class="fas fa-users card-icon" style="color: #78ffd6;"></i> Multiple Profiles Mode</h4>
+                  <p>Schedule successive bootlicking replies to multiple profiles (one every 16 minutes).</p>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Form Section -->
+            <div class="form-section">
+              <form id="bootlickForm">
+                <div class="form-group">
+                  <label for="profileUrls">Twitter Profile URL(s)</label>
+                  <textarea id="profileUrls" name="profileUrls" class="single-profile" placeholder="https://twitter.com/username" required></textarea>
+                </div>
+                <div class="form-group checkbox">
+                  <input type="checkbox" id="multipleProfiles" name="multipleProfiles">
+                  <label for="multipleProfiles">Enable Multiple Profiles Mode</label>
+                  <img id="multipleProfilesImg" src="assets/users.png" alt="Multiple Profiles" class="hidden">
+                </div>
+                <button type="submit" id="bootlickSubmitBtn">Generate Bootlicking Response</button>
+                <div id="bootlickTimer"></div>
+              </form>
+            </div>
           </div>
-          <div class="feature">
-            <h3><i class="fas fa-link card-icon" style="color: #4361ee;"></i> Blockchain Logging</h3>
-            <p>Every reply is logged on the NEAR blockchain</p>
+          <div class="response-header">
+            <h3><i class="fas fa-reply card-icon" style="color: #78ffd6;"></i> Response</h3>
           </div>
-          <div class="feature">
-            <h3><i class="fas fa-crown card-icon" style="color: #4361ee;"></i> Troll Lord Mode</h3>
-            <p>Schedule 10 successive replies at 16-minute intervals</p>
-          </div>
+          <div id="bootlickResponseArea" class="response-area"></div>
         </div>
       </div>
     </div>
@@ -113,6 +140,25 @@
     <!-- Section 4 -->
     <div class="section" id="section4">
       <div class="content">
+        <!-- Schedule Tracking Panel -->
+        <div class="schedule-tracking-section">
+          <div class="schedule-header" onclick="toggleSchedules()">
+            <h3><i class="fas fa-calendar-alt card-icon" style="color: #4CC9F0;"></i> Active Schedules</h3>
+            <svg id="scheduleToggleIcon" class="toggle-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+            </svg>
+          </div>
+          <div id="scheduleContent" class="schedule-content">
+            <div id="scheduleLoader" class="spinner-container">
+              <div class="spinner"></div>
+              <p style="color: #555;">Loading schedules...</p>
+            </div>
+            <div id="scheduleList" class="schedule-list hidden"></div>
+            <div id="scheduleDetails" class="schedule-details hidden"></div>
+          </div>
+        </div>
+        
+        <!-- Server Logs Panel -->
         <div class="server-logs-section">
           <div class="logs-header" onclick="toggleLogs()">
             <h3><i class="fas fa-terminal card-icon" style="color: #4361ee;"></i> Server Logs</h3>
@@ -126,7 +172,6 @@
         </div>
       </div>
     </div>
-  </div>
 
   <!-- Initialize fullPage.js -->
   <script>
