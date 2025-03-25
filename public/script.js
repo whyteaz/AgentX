@@ -123,7 +123,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <p style="margin-bottom: 15px;"><strong>Original Tweet: </strong></br>${data.data.tweetContent}</p>
                 <p><strong>Twitter Reply URL: </strong> ${
                   twitterReplyUrl !== "N/A"
-                    ? `<a href="${twitterReplyUrl}" target="_blank" style="color: #a8ff78; text-decoration: underline;"></br>${twitterReplyUrl}</a>`
+                    ? `<a href="${twitterReplyUrl}" target="_blank" style="color: #4361ee; text-decoration: underline;"></br>${twitterReplyUrl}</a>`
                     : "N/A"
                 }</p>
               </div>
