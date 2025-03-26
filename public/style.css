@@ -402,7 +402,7 @@ button:disabled {
   align-items: center;
 }
 
-/* Section 3 - Features */
+/* Section 3 - Dashboard */
 #section3 {
   background: linear-gradient(135deg, #a8ff78 0%, #78ffd6 100%);
   position: relative;
@@ -550,10 +550,6 @@ button:disabled {
 @media (max-width: 768px) {
   #section1 h1 {
     font-size: 40px;
-  }
-  
-  .features {
-    grid-template-columns: 1fr;
   }
   
   .nav-links {
