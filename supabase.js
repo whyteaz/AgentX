@@ -65,21 +65,28 @@ async function updateSchedule(id, data, status = null) {
 
 // Function to get all schedules for a user
 async function getUserSchedules(userId) {
-  try {
-    const { data, error } = await supabase
-      .from('schedules')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false });
-
-    if (error) throw error;
-    
-    return data;
-  } catch (error) {
-    log('error', 'Error fetching user schedules:', error);
-    throw error;
+    try {
+      // Add additional logging for debugging
+      log('info', `Fetching schedules for user: ${userId}`);
+      
+      const { data, error } = await supabase
+        .from('schedules')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+  
+      if (error) {
+        log('error', 'Error fetching user schedules:', error);
+        throw error;
+      }
+      
+      log('info', `Retrieved ${data ? data.length : 0} schedules for user`);
+      return data || [];
+    } catch (error) {
+      log('error', 'Error fetching user schedules:', error);
+      throw error;
+    }
   }
-}
 
 // Function to get a specific schedule by ID
 async function getScheduleById(id) {

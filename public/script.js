@@ -26,79 +26,61 @@ function formatDate(dateString) {
   return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
 }
 
-// Function to load schedules
+// Simplified function to load schedules
 async function loadSchedules() {
+  console.log("Loading schedules started");
+  
   const scheduleList = document.getElementById('scheduleList');
   const scheduleLoader = document.getElementById('scheduleLoader');
-  const scheduleDetails = document.getElementById('scheduleDetails');
   
-  if (scheduleList && scheduleLoader) {
-    // Show loader
-    scheduleLoader.classList.remove('hidden');
-    scheduleList.classList.add('hidden');
-    scheduleDetails.classList.add('hidden');
+  // Check if elements exist
+  if (!scheduleList) {
+    console.error("scheduleList element not found!");
+    return;
+  }
+  if (!scheduleLoader) {
+    console.error("scheduleLoader element not found!");
+    return;
+  }
+  
+  // Show loader, hide list
+  scheduleLoader.classList.remove('hidden');
+  scheduleList.classList.add('hidden');
+  
+  try {
+    console.log("Fetching from /schedules");
+    const response = await fetch('/schedules');
+    console.log("Fetch response status:", response.status);
     
-    try {
-      const response = await fetch('/schedules');
-      const data = await response.json();
-      
-      if (data.status === 'Success' && data.data) {
-        scheduleList.innerHTML = '';
-        
-        if (data.data.length === 0) {
-          scheduleList.innerHTML = '<div class="no-schedules">No schedules found. Start a Troll Lord or Multiple Bootlick session to create schedules.</div>';
-        } else {
-          // Sort schedules by date (newest first)
-          const sortedSchedules = data.data.sort((a, b) => 
-            new Date(b.created_at) - new Date(a.created_at)
-          );
-          
-          sortedSchedules.forEach(schedule => {
-            const card = document.createElement('div');
-            card.className = 'schedule-card';
-            card.setAttribute('data-id', schedule.id);
-            
-            // Determine schedule name based on type
-            let scheduleName = '';
-            if (schedule.type === 'troll') {
-              scheduleName = `Troll Lord: ${schedule.data.tweetLink.substring(0, 30)}...`;
-            } else if (schedule.type === 'bootlick') {
-              scheduleName = `Bootlicking: ${schedule.data.profileUrls.length} profiles`;
-            }
-            
-            // Calculate progress
-            const progress = schedule.data.completedReplies + '/' + schedule.data.totalReplies;
-            
-            // Status label class
-            const statusClass = 
-              schedule.status === 'active' ? 'status-active' : 
-              schedule.status === 'completed' ? 'status-completed' : 'status-failed';
-            
-            card.innerHTML = `
-              <h4>${scheduleName}</h4>
-              <div class="schedule-card-details">
-                <p>Created: ${formatDate(schedule.created_at)}</p>
-                <p>Progress: ${progress}</p>
-                <span class="schedule-card-status ${statusClass}">${schedule.status}</span>
-              </div>
-            `;
-            
-            // Add click handler to show schedule details
-            card.addEventListener('click', () => loadScheduleDetails(schedule.id));
-            
-            scheduleList.appendChild(card);
-          });
-        }
-      } else {
-        scheduleList.innerHTML = '<div class="no-schedules">Error loading schedules: ' + (data.error || 'Unknown error') + '</div>';
-      }
-    } catch (error) {
-      scheduleList.innerHTML = '<div class="no-schedules">Error loading schedules: ' + error.message + '</div>';
-    } finally {
-      // Hide loader and show list
-      scheduleLoader.classList.add('hidden');
-      scheduleList.classList.remove('hidden');
+    const data = await response.json();
+    console.log("Received data:", data);
+    
+    // Clear and show list
+    scheduleList.innerHTML = '';
+    
+    if (!data.data || data.data.length === 0) {
+      scheduleList.innerHTML = '<div class="no-schedules">No schedules found</div>';
+    } else {
+      // Just show the raw data for debugging
+      data.data.forEach((schedule, index) => {
+        const item = document.createElement('div');
+        item.className = 'schedule-card';
+        item.innerHTML = `
+          <h4>Schedule #${index+1}: ${schedule.type}</h4>
+          <div>ID: ${schedule.id}</div>
+          <div>Status: ${schedule.status}</div>
+          <div>Created: ${schedule.created_at}</div>
+        `;
+        scheduleList.appendChild(item);
+      });
     }
+  } catch (error) {
+    console.error("Error loading schedules:", error);
+    scheduleList.innerHTML = `<div class="no-schedules">Error: ${error.message}</div>`;
+  } finally {
+    // Hide loader and show list
+    scheduleLoader.classList.add('hidden');
+    scheduleList.classList.remove('hidden');
   }
 }
 
@@ -267,15 +249,13 @@ async function loadScheduleDetails(scheduleId) {
   }
   
   const multipleProfilesCheckbox = document.getElementById('multipleProfiles');
-  const multipleProfilesImg = document.getElementById('multipleProfilesImg');
   const profileUrlsInput = document.getElementById('profileUrls');
   
-  if (multipleProfilesCheckbox && multipleProfilesImg && profileUrlsInput) {
+  if (multipleProfilesCheckbox && profileUrlsInput) {
     // Set initial class
     profileUrlsInput.classList.add('single-profile');
     
     multipleProfilesCheckbox.addEventListener('change', () => {
-      multipleProfilesImg.classList.toggle('hidden', !multipleProfilesCheckbox.checked);
       
       // Update textarea classes and placeholder
       if (multipleProfilesCheckbox.checked) {
@@ -622,5 +602,9 @@ async function loadScheduleDetails(scheduleId) {
   const pollInterval = 15000; // 15 seconds instead of 5
   setInterval(pollLogs, pollInterval);
   pollLogs(); // Initial poll
+
+  // At the end of your DOMContentLoaded event
+  console.log("Page loaded, loading schedules");
+  setTimeout(loadSchedules, 1000); // Slight delay to ensure DOM is ready
 
 });
