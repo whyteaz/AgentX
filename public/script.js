@@ -335,7 +335,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     profileUrlsInput.classList.add('single-profile');
     
     multipleProfilesCheckbox.addEventListener('change', () => {
-      
       // Update textarea classes and placeholder
       if (multipleProfilesCheckbox.checked) {
         profileUrlsInput.classList.remove('single-profile');
@@ -507,8 +506,10 @@ document.addEventListener('DOMContentLoaded', async () => {
               }
             `;
           }
-          // Refresh the schedule card after a schedule is created
-          loadSchedules();
+          // Ensure schedule panel is visible and refresh schedules after a short delay
+          const scheduleContentEl = document.getElementById('scheduleContent');
+          if (scheduleContentEl) scheduleContentEl.classList.remove('hidden');
+          setTimeout(loadSchedules, 500);
         }
         
         startTimer('troll');
@@ -597,8 +598,10 @@ document.addEventListener('DOMContentLoaded', async () => {
               }
             `;
           }
-          // Refresh the schedule card after a schedule is created
-          loadSchedules();
+          // Ensure schedule panel is visible and refresh schedules after a short delay
+          const scheduleContentEl = document.getElementById('scheduleContent');
+          if (scheduleContentEl) scheduleContentEl.classList.remove('hidden');
+          setTimeout(loadSchedules, 500);
         }
         
         startTimer('bootlick');

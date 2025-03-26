@@ -141,13 +141,14 @@ async function scheduleReplies({
   statusKey
 }) {
   let count = 1,
-    index = 0;
+      index = 0;
 
   const processReply = async (target, count) => {
     const result = await replyFunction(target, count);
     return composeResponse(result, count, target, type);
   };
 
+  // Process the first reply immediately
   try {
     const response = await processReply(targets[index], count);
     schedule.completedReplies = count;
@@ -168,7 +169,7 @@ async function scheduleReplies({
   index++;
 
   const intervalId = setInterval(async () => {
-    if (count <= totalReplies && index < targets.length) {
+    if (index < targets.length) {
       try {
         const response = await processReply(targets[index], count);
         schedule.completedReplies = count;

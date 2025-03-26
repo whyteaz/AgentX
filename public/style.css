@@ -621,6 +621,10 @@ button:disabled {
   display: none !important;
 } 
 
+.remove-margin {
+  margin: 0 !important;
+}
+
 /* Terminal-like Server Logs Styling */
 .server-logs-section {
   max-width: 800px;
