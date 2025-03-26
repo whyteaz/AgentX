@@ -803,21 +803,6 @@ button:disabled {
   margin-top: 10px;
 }
 
-.status-active {
-  background-color: #e3f2fd;
-  color: #1976d2;
-}
-
-.status-completed {
-  background-color: #e8f5e9;
-  color: #388e3c;
-}
-
-.status-failed {
-  background-color: #ffebee;
-  color: #d32f2f;
-}
-
 .schedule-back-button {
   background: #f1f3f5;
   border: none;
@@ -897,4 +882,106 @@ button:disabled {
   padding: 30px;
   color: #6c757d;
   font-size: 16px;
+}
+
+.schedule-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #ffffff;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+  font-size: 14px;
+}
+
+.schedule-table th {
+  background: #f8f9fa;
+  padding: 12px 15px;
+  text-align: left;
+  font-weight: 600;
+  color: #333;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.schedule-table td {
+  padding: 12px 15px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  color: #555;
+}
+
+.schedule-row {
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.schedule-row:hover {
+  background-color: #f0f4f8;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.schedule-row:last-child td {
+  border-bottom: none;
+}
+
+/* Status badges for different states */
+.status-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.status-active {
+  background-color: #e3f2fd;
+  color: #1976d2;
+}
+
+.status-completed {
+  background-color: #e8f5e9;
+  color: #388e3c;
+}
+
+.status-failed {
+  background-color: #ffebee;
+  color: #d32f2f;
+}
+
+.status-pending {
+  background-color: #fff8e1;
+  color: #f57c00;
+}
+
+/* Make the schedule content scrollable with fixed height */
+.schedule-content {
+  max-height: 400px;
+  overflow: auto;
+  padding: 20px;
+  scrollbar-width: thin;
+}
+
+/* Custom scrollbar for the table container */
+.schedule-content::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.schedule-content::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.schedule-content::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+.schedule-content::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
 }

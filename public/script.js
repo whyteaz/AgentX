@@ -70,9 +70,30 @@ async function loadSchedules() {
     elements.loader.classList.remove('hidden');
     elements.list.classList.add('hidden');
 
-    const response = await fetch('/schedules');
-    const data = await handleApiError(response);
-
+    // Add error handling for network issues
+    const response = await fetch('/schedules').catch(err => {
+      console.error("Network error fetching schedules:", err);
+      throw new Error(`Network error: ${err.message}`);
+    });
+    
+    // Handle non-OK responses
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => "Unknown error");
+      console.error(`Server error (${response.status}):`, errorText);
+      throw new Error(`Server error (${response.status}): ${errorText}`);
+    }
+    
+    // Parse JSON with error handling
+    const data = await response.json().catch(err => {
+      console.error("JSON parse error:", err);
+      throw new Error("Invalid response format from server");
+    });
+    
+    // Handle missing or invalid data structure
+    if (!data || typeof data !== 'object') {
+      throw new Error("Invalid data structure received from server");
+    }
+    
     renderScheduleList(elements.list, data.data || []);
   } catch (error) {
     console.error("Error loading schedules:", error);
@@ -89,14 +110,39 @@ function renderScheduleList(container, schedules) {
     return;
   }
 
-  container.innerHTML = schedules.map((schedule, index) => `
-    <div class="schedule-card">
-      <h4>Schedule #${index+1}: ${schedule.type}</h4>
-      <div>ID: ${schedule.id}</div>
-      <div>Status: ${schedule.status}</div>
-      <div>Created: ${formatDate(schedule.created_at)}</div>
-    </div>
-  `).join('');
+  const table = `
+    <table class="schedule-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Type</th>
+          <th>ID</th>
+          <th>Status</th>
+          <th>Created</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${schedules.map((schedule, index) => `
+          <tr class="schedule-row" data-id="${schedule.id}">
+            <td>${index+1}</td>
+            <td>${schedule.type}</td>
+            <td>${schedule.id}</td>
+            <td><span class="status-badge status-${schedule.status.toLowerCase()}">${schedule.status}</span></td>
+            <td>${formatDate(schedule.created_at)}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+  
+  container.innerHTML = table;
+  
+  // Add click event listeners to each row
+  document.querySelectorAll('.schedule-row').forEach(row => {
+    row.addEventListener('click', () => {
+      loadScheduleDetails(row.getAttribute('data-id'));
+    });
+  });
 }
 
 // Function to load schedule details
@@ -617,5 +663,4 @@ async function loadScheduleDetails(scheduleId) {
   // At the end of your DOMContentLoaded event
   console.log("Page loaded, loading schedules");
   setTimeout(loadSchedules, 1000); // Slight delay to ensure DOM is ready
-
 });
