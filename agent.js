@@ -140,8 +140,7 @@ async function scheduleReplies({
   statusStore,
   statusKey
 }) {
-  let count = 1,
-      index = 0;
+  let count = 1, index = 0;
 
   const processReply = async (target, count) => {
     const result = await replyFunction(target, count);
@@ -154,6 +153,11 @@ async function scheduleReplies({
     schedule.completedReplies = count;
     schedule.responses.push(response);
     statusStore[statusKey].push({ replyNumber: count, result: response });
+    schedule.updatedAt = new Date().toISOString();
+    if (schedule.completedReplies === totalReplies) {
+      schedule.status = "completed";
+      return { scheduleId: schedule.id, totalReplies };
+    }
   } catch (error) {
     const errorMessage = error.toString();
     schedule.responses.push({
@@ -187,6 +191,12 @@ async function scheduleReplies({
         statusStore[statusKey].push({ replyNumber: count, error: errorMessage });
       }
       schedule.updatedAt = new Date().toISOString();
+      if (schedule.completedReplies === totalReplies) {
+        clearInterval(intervalId);
+        schedule.status = "completed";
+        schedule.updatedAt = new Date().toISOString();
+        return;
+      }
       count++;
       index++;
     } else {

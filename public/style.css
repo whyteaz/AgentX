@@ -362,7 +362,6 @@ button:disabled {
 }
 
 #timer {
-  margin-top: 15px;
   color: #e74c3c;
   font-weight: 500;
   text-align: center;
@@ -1000,4 +999,20 @@ button:disabled {
 
 .schedule-content::-webkit-scrollbar-thumb:hover {
   background: #a8a8a8;
+}
+
+/* New rules to stick the button to the bottom of its container */
+.form-section {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  height: 100%;
+}
+.form-section form {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.form-section button {
+  margin-top: auto;
 }
