@@ -195,7 +195,7 @@ nav {
   font-weight: 400;
 }
 
-/* Section 2 - App */
+/* Section 2 - Troll */
 #section2 {
   background: linear-gradient(135deg, #093028 0%, #237A57 100%);
   position: relative;
@@ -446,7 +446,7 @@ button:disabled {
   border-radius: 4px;
 }
 
-/* Section 4 - CTA */
+/* Section 4 - Dashboard */
 #section4 {
   background: linear-gradient(135deg, #4CC9F0 0%, #560BAD 100%);
   position: relative;

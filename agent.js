@@ -1,7 +1,6 @@
 const { replyTweet, fetchTweet, fetchLatestTweet } = require("./twitter");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const { log } = require("./logger");
-const { createSchedule, updateSchedule } = require("./supabase");
 require("dotenv").config();
 
 const MAX_REPLY_COUNT = 10;
@@ -24,6 +23,9 @@ log("info", "Google Gemini API models initialized.");
 
 const trollStatuses = {};
 const bootlickStatuses = {};
+
+// In-memory schedule store
+const schedules = {};
 
 // Generic retry helper with exponential backoff
 async function retryOperation(operation, retries = 3, delay = 1000) {
@@ -134,8 +136,7 @@ async function scheduleReplies({
   targets,
   replyFunction,
   totalReplies,
-  scheduleData,
-  scheduleId,
+  schedule,
   statusStore,
   statusKey
 }) {
@@ -149,13 +150,12 @@ async function scheduleReplies({
 
   try {
     const response = await processReply(targets[index], count);
-    scheduleData.completedReplies = count;
-    scheduleData.responses.push(response);
+    schedule.completedReplies = count;
+    schedule.responses.push(response);
     statusStore[statusKey].push({ replyNumber: count, result: response });
-    await updateSchedule(scheduleId, scheduleData);
   } catch (error) {
     const errorMessage = error.toString();
-    scheduleData.responses.push({
+    schedule.responses.push({
       replyNumber: count,
       timestamp: new Date().toISOString(),
       success: false,
@@ -163,9 +163,6 @@ async function scheduleReplies({
       ...(type === "bootlick" ? { profileUrl: targets[index] } : {})
     });
     statusStore[statusKey].push({ replyNumber: count, error: errorMessage });
-    await updateSchedule(scheduleId, scheduleData);
-    if (type === "bootlick")
-      return { totalProfiles: totalReplies, statusKey, scheduleId, firstError: errorMessage };
   }
   count++;
   index++;
@@ -174,13 +171,12 @@ async function scheduleReplies({
     if (count <= totalReplies && index < targets.length) {
       try {
         const response = await processReply(targets[index], count);
-        scheduleData.completedReplies = count;
-        scheduleData.responses.push(response);
+        schedule.completedReplies = count;
+        schedule.responses.push(response);
         statusStore[statusKey].push({ replyNumber: count, result: response });
-        await updateSchedule(scheduleId, scheduleData);
       } catch (error) {
         const errorMessage = error.toString();
-        scheduleData.responses.push({
+        schedule.responses.push({
           replyNumber: count,
           timestamp: new Date().toISOString(),
           success: false,
@@ -188,27 +184,34 @@ async function scheduleReplies({
           ...(type === "bootlick" ? { profileUrl: targets[index] } : {})
         });
         statusStore[statusKey].push({ replyNumber: count, error: errorMessage });
-        await updateSchedule(scheduleId, scheduleData);
       }
+      schedule.updatedAt = new Date().toISOString();
       count++;
       index++;
     } else {
       clearInterval(intervalId);
-      await updateSchedule(scheduleId, scheduleData, "completed");
+      schedule.status = "completed";
+      schedule.updatedAt = new Date().toISOString();
     }
   }, REPLY_INTERVAL_MS);
-  return { scheduleId, totalReplies };
+  return { scheduleId: schedule.id, totalReplies };
 }
 
 async function scheduleTrollReplies(tweetLink, userId) {
-  const scheduleData = {
+  const scheduleId = "sch-" + Date.now();
+  const schedule = {
+    id: scheduleId,
+    type: "troll",
     tweetLink,
     totalReplies: MAX_REPLY_COUNT,
     completedReplies: 0,
-    responses: []
+    responses: [],
+    status: "active",
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    userId: userId
   };
-  const schedule = await createSchedule("troll", userId, scheduleData);
-  const scheduleId = schedule.id;
+  schedules[scheduleId] = schedule;
   trollStatuses[tweetLink] = [];
   const targets = Array(MAX_REPLY_COUNT).fill(tweetLink);
   return scheduleReplies({
@@ -216,8 +219,7 @@ async function scheduleTrollReplies(tweetLink, userId) {
     targets,
     replyFunction: runAgent,
     totalReplies: MAX_REPLY_COUNT,
-    scheduleData,
-    scheduleId,
+    schedule,
     statusStore: trollStatuses,
     statusKey: tweetLink
   });
@@ -226,14 +228,20 @@ async function scheduleTrollReplies(tweetLink, userId) {
 async function scheduleBootlickReplies(profileUrls, userId) {
   const profiles = profileUrls.split("\n").filter((url) => url.trim());
   if (!profiles.length) throw new Error("No valid profile URLs provided");
-  const scheduleData = {
+  const scheduleId = "sch-" + Date.now();
+  const schedule = {
+    id: scheduleId,
+    type: "bootlick",
     profileUrls: profiles,
     totalReplies: profiles.length,
     completedReplies: 0,
-    responses: []
+    responses: [],
+    status: "active",
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    userId: userId
   };
-  const schedule = await createSchedule("bootlick", userId, scheduleData);
-  const scheduleId = schedule.id;
+  schedules[scheduleId] = schedule;
   const statusKey = profiles.join("|");
   bootlickStatuses[statusKey] = [];
   return scheduleReplies({
@@ -241,10 +249,9 @@ async function scheduleBootlickReplies(profileUrls, userId) {
     targets: profiles,
     replyFunction: runBootlickAgent,
     totalReplies: profiles.length,
-    scheduleData,
-    scheduleId,
+    schedule,
     statusStore: bootlickStatuses,
-    statusKey
+    statusKey: statusKey
   });
 }
 
@@ -268,6 +275,15 @@ async function pollMentions(pollInterval = 24 * 60 * 60 * 1000) {
   }
 }
 
+// Functions to retrieve schedules from the in-memory store
+function getUserSchedules(userId) {
+  return Object.values(schedules).filter((s) => s.userId === userId);
+}
+
+function getScheduleById(id) {
+  return schedules[id] || null;
+}
+
 module.exports = {
   runAgent,
   runBootlickAgent,
@@ -276,5 +292,7 @@ module.exports = {
   scheduleBootlickReplies,
   pollMentions,
   trollStatuses,
-  bootlickStatuses
+  bootlickStatuses,
+  getUserSchedules,
+  getScheduleById
 };

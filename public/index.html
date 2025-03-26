@@ -24,9 +24,9 @@
     <div class="logo">AgentX</div>
     <div class="nav-links">
       <a href="#home"><i class="fas fa-home"></i></a>
-      <a href="#app">App</a>
-      <a href="#features">Features</a>
-      <a href="#cta">Contact</a>
+      <a href="#troll">Troll</a>
+      <a href="#bootlick">Bootlick</a>
+      <a href="#dashboard">Dashboard</a>
     </div>
   </nav>
 
@@ -36,7 +36,7 @@
       <div class="content">
         <h1>Trolling as a Service</h1>
         <p>AI-powered trolling on autopilot</p>
-        <a href="#app" class="scroll-down">
+        <a href="#troll" class="scroll-down">
           <span class="arrow-down">↓</span>
       </a>
       </div>
@@ -142,7 +142,7 @@
         <!-- Schedule Tracking Panel -->
         <div class="schedule-tracking-section">
           <div class="schedule-header" onclick="toggleSchedules()">
-            <h3><i class="fas fa-calendar-alt card-icon" style="color: #4CC9F0;"></i> Active Schedules</h3>
+            <h3><i class="fas fa-calendar-alt card-icon" style="color: #4CC9F0;"></i> Queued Schedules</h3>
             <svg id="scheduleToggleIcon" class="toggle-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
             </svg>
@@ -175,7 +175,7 @@
   <script>
     document.addEventListener('DOMContentLoaded', function() {
       new fullpage('#fullpage', {
-        anchors: ['home', 'app', 'features', 'cta'],
+        anchors: ['home', 'troll', 'bootlick', 'dashboard'],
         navigation: true,
         navigationPosition: 'right',
         menu: '.nav-links',

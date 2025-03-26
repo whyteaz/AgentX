@@ -33,288 +33,290 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
   
   // Schedule tracking
-window.toggleSchedules = function() {
-  const content = document.getElementById('scheduleContent');
-  const icon = document.getElementById('scheduleToggleIcon');
-  
-  if (content && icon) {
-    content.classList.toggle('hidden');
-    icon.style.transform = content.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
+  window.toggleSchedules = function() {
+    const content = document.getElementById('scheduleContent');
+    const icon = document.getElementById('scheduleToggleIcon');
     
-    // Load schedules when panel is opened
-    if (!content.classList.contains('hidden')) {
-      loadSchedules();
-    }
-  }
-}
-
-// Function to format date
-function formatDate(dateString) {
-  const date = new Date(dateString);
-  return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
-}
-
-// Simplified function to load schedules
-async function loadSchedules() {
-  const scheduleContent = document.getElementById('scheduleContent');
-  const loader = document.getElementById('scheduleLoader');
-
-  if (!scheduleContent || !loader) {
-    console.error("Required elements not found");
-    return;
-  }
-
-  try {
-    loader.classList.remove('hidden');
-    
-    // Add error handling for network issues
-    const response = await fetch('/schedules').catch(err => {
-      console.error("Network error fetching schedules:", err);
-      throw new Error(`Network error: ${err.message}`);
-    });
-    
-    // Handle non-OK responses
-    if (!response.ok) {
-      const errorText = await response.text().catch(() => "Unknown error");
-      console.error(`Server error (${response.status}):`, errorText);
-      throw new Error(`Server error (${response.status}): ${errorText}`);
-    }
-    
-    // Parse JSON with error handling
-    const data = await response.json().catch(err => {
-      console.error("JSON parse error:", err);
-      throw new Error("Invalid response format from server");
-    });
-    
-    // Handle missing or invalid data structure
-    if (!data || typeof data !== 'object') {
-      throw new Error("Invalid data structure received from server");
-    }
-    
-    renderScheduleTable(scheduleContent, data.data || []);
-  } catch (error) {
-    console.error("Error loading schedules:", error);
-    // Create error message directly in the content area
-    scheduleContent.innerHTML = `
-      <div class="schedule-error">
-        <p>Error: ${error.message}</p>
-      </div>
-    `;
-  } finally {
-    loader.classList.add('hidden');
-  }
-}
-
-function renderScheduleTable(container, schedules) {
-  if (!schedules.length) {
-    container.innerHTML = '<div class="no-schedules">No schedules found</div>';
-    return;
-  }
-  
-  // Clear any existing content except the loader
-  const loader = container.querySelector('#scheduleLoader');
-  container.innerHTML = '';
-  if (loader) {
-    container.appendChild(loader);
-  }
-  
-  // Create table element
-  const table = document.createElement('table');
-  table.className = 'schedule-table';
-  
-  // Build table HTML
-  table.innerHTML = `
-    <thead>
-      <tr>
-        <th>#</th>
-        <th>Type</th>
-        <th>ID</th>
-        <th>Status</th>
-        <th>Created</th>
-      </tr>
-    </thead>
-    <tbody>
-      ${schedules.map((schedule, index) => `
-        <tr class="schedule-row" data-id="${schedule.id}">
-          <td>${index+1}</td>
-          <td>${schedule.type}</td>
-          <td>${schedule.id}</td>
-          <td><span class="status-badge status-${schedule.status.toLowerCase()}">${schedule.status}</span></td>
-          <td>${formatDate(schedule.created_at)}</td>
-        </tr>
-      `).join('')}
-    </tbody>
-  `;
-  
-  // Append table to container
-  container.appendChild(table);
-  
-  // Add click event listeners to each row
-  document.querySelectorAll('.schedule-row').forEach(row => {
-    row.addEventListener('click', () => {
-      loadScheduleDetails(row.getAttribute('data-id'));
-    });
-  });
-}
-
-// Function to load schedule details
-async function loadScheduleDetails(scheduleId) {
-  const scheduleContent = document.getElementById('scheduleContent');
-  const scheduleLoader = document.getElementById('scheduleLoader');
-  const scheduleDetails = document.getElementById('scheduleDetails');
-  
-  if (scheduleDetails && scheduleLoader && scheduleContent) {
-    // Show loader
-    scheduleLoader.classList.remove('hidden');
-    // Hide the table but keep the container visible
-    const table = scheduleContent.querySelector('.schedule-table');
-    if (table) table.style.display = 'none';
-    scheduleDetails.classList.add('hidden');
-    
-    try {
-      const response = await fetch(`/schedule/${scheduleId}`);
-      const data = await response.json();
+    if (content && icon) {
+      content.classList.toggle('hidden');
+      icon.style.transform = content.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
       
-      if (data.status === 'Success' && data.data) {
-        const schedule = data.data;
-        
-        // Create back button
-        const backBtn = document.createElement('button');
-        backBtn.className = 'schedule-back-button';
-        backBtn.innerHTML = '<i class="fas fa-arrow-left"></i> Back to schedules';
-        backBtn.addEventListener('click', () => {
-          scheduleDetails.classList.add('hidden');
-          // Show the table again
-          const table = scheduleContent.querySelector('.schedule-table');
-          if (table) table.style.display = '';
-        });
-        
-        // Determine schedule title based on type
-        let scheduleTitle = '';
-        if (schedule.type === 'troll') {
-          scheduleTitle = 'Troll Lord Schedule';
-        } else if (schedule.type === 'bootlick') {
-          scheduleTitle = 'Bootlicking Schedule';
-        }
-        
-        // Create schedule header
-        const header = document.createElement('div');
-        header.className = 'schedule-details-header';
-        header.innerHTML = `<h3>${scheduleTitle}</h3>`;
-        
-        // Create schedule info section
-        const info = document.createElement('div');
-        info.className = 'schedule-details-info';
-        
-        // Add appropriate info based on schedule type
-        if (schedule.type === 'troll') {
-          info.innerHTML = `
-            <p><strong>Tweet:</strong> <a href="${schedule.data.tweetLink}" target="_blank">${schedule.data.tweetLink}</a></p>
-            <p><strong>Created:</strong> ${formatDate(schedule.created_at)}</p>
-            <p><strong>Status:</strong> ${schedule.status}</p>
-            <p><strong>Progress:</strong> ${schedule.data.completedReplies}/${schedule.data.totalReplies}</p>
-          `;
-        } else if (schedule.type === 'bootlick') {
-          const profileLinks = schedule.data.profileUrls.map(url => 
-            `<a href="${url}" target="_blank">${url}</a>`
-          ).join('<br>');
-          
-          info.innerHTML = `
-            <p><strong>Profiles:</strong><br>${profileLinks}</p>
-            <p><strong>Created:</strong> ${formatDate(schedule.created_at)}</p>
-            <p><strong>Status:</strong> ${schedule.status}</p>
-            <p><strong>Progress:</strong> ${schedule.data.completedReplies}/${schedule.data.totalReplies}</p>
-          `;
-        }
-        
-        // Create responses section
-        const responsesHeader = document.createElement('h4');
-        responsesHeader.textContent = 'Responses';
-        
-        const responses = document.createElement('div');
-        responses.className = 'schedule-responses';
-        
-        if (schedule.data.responses && schedule.data.responses.length > 0) {
-          // Sort responses by number
-          const sortedResponses = [...schedule.data.responses].sort((a, b) => a.replyNumber - b.replyNumber);
-          
-          sortedResponses.forEach(response => {
-            const responseEl = document.createElement('div');
-            responseEl.className = 'schedule-response';
-            
-            // Create response header with number and status
-            const responseHeader = document.createElement('div');
-            responseHeader.className = 'schedule-response-header';
-            responseHeader.innerHTML = `
-              <strong>Reply #${response.replyNumber}</strong>
-              <span class="${response.success ? 'schedule-response-success' : 'schedule-response-error'}">
-                ${response.success ? 'Success' : 'Failed'}
-              </span>
-            `;
-            
-            // Create response content
-            const responseContent = document.createElement('div');
-            
-            if (response.success) {
-              if (schedule.type === 'troll') {
-                responseContent.innerHTML = `
-                  <p><strong>Response:</strong> ${response.responseText}</p>
-                  <p><strong>Time:</strong> ${formatDate(response.timestamp)}</p>
-                  ${response.replyId ? `<p><strong>Tweet:</strong> <a href="https://twitter.com/i/web/status/${response.replyId}" target="_blank">View on Twitter</a></p>` : ''}
-                `;
-              } else if (schedule.type === 'bootlick') {
-                responseContent.innerHTML = `
-                  <p><strong>Profile:</strong> <a href="${response.profileUrl}" target="_blank">${response.profileUrl}</a></p>
-                  <p><strong>Response:</strong> ${response.responseText}</p>
-                  <p><strong>Time:</strong> ${formatDate(response.timestamp)}</p>
-                  ${response.replyId ? `<p><strong>Tweet:</strong> <a href="https://twitter.com/i/web/status/${response.replyId}" target="_blank">View on Twitter</a></p>` : ''}
-                `;
-              }
-            } else {
-              responseContent.innerHTML = `
-                <p><strong>Error:</strong> ${response.error}</p>
-                <p><strong>Time:</strong> ${formatDate(response.timestamp)}</p>
-                ${schedule.type === 'bootlick' ? `<p><strong>Profile:</strong> <a href="${response.profileUrl}" target="_blank">${response.profileUrl}</a></p>` : ''}
-              `;
-            }
-            
-            responseEl.appendChild(responseHeader);
-            responseEl.appendChild(responseContent);
-            responses.appendChild(responseEl);
-          });
-        } else {
-          responses.innerHTML = '<div class="schedule-response">No responses yet</div>';
-        }
-        
-        // Assemble the details view
-        scheduleDetails.innerHTML = '';
-        scheduleDetails.appendChild(backBtn);
-        scheduleDetails.appendChild(header);
-        scheduleDetails.appendChild(info);
-        scheduleDetails.appendChild(responsesHeader);
-        scheduleDetails.appendChild(responses);
-      } else {
-        scheduleDetails.innerHTML = `
-          <button class="schedule-back-button" onclick="document.getElementById('scheduleDetails').classList.add('hidden'); document.getElementById('scheduleList').classList.remove('hidden');">
-            <i class="fas fa-arrow-left"></i> Back to schedules
-          </button>
-          <div class="no-schedules">Error loading schedule details: ${data.error || 'Unknown error'}</div>
-        `;
+      // Load schedules when panel is opened
+      if (!content.classList.contains('hidden')) {
+        loadSchedules();
       }
+    }
+  }
+
+  // Function to format date
+  function formatDate(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+  }
+
+  // Simplified function to load schedules
+  async function loadSchedules() {
+    const scheduleContent = document.getElementById('scheduleContent');
+    const loader = document.getElementById('scheduleLoader');
+
+    if (!scheduleContent || !loader) {
+      console.error("Required elements not found");
+      return;
+    }
+
+    try {
+      loader.classList.remove('hidden');
+      
+      // Add error handling for network issues
+      const response = await fetch('/schedules').catch(err => {
+        console.error("Network error fetching schedules:", err);
+        throw new Error(`Network error: ${err.message}`);
+      });
+      
+      // Handle non-OK responses
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => "Unknown error");
+        console.error(`Server error (${response.status}):`, errorText);
+        throw new Error(`Server error (${response.status}): ${errorText}`);
+      }
+      
+      // Parse JSON with error handling
+      const data = await response.json().catch(err => {
+        console.error("JSON parse error:", err);
+        throw new Error("Invalid response format from server");
+      });
+      
+      // Handle missing or invalid data structure
+      if (!data || typeof data !== 'object') {
+        throw new Error("Invalid data structure received from server");
+      }
+      
+      renderScheduleTable(scheduleContent, data.data || []);
     } catch (error) {
-      scheduleDetails.innerHTML = `
-        <button class="schedule-back-button" onclick="document.getElementById('scheduleDetails').classList.add('hidden'); document.querySelector('.schedule-table').style.display = '';">
-          <i class="fas fa-arrow-left"></i> Back to schedules
-        </button>
-        <div class="no-schedules">Error loading schedule details: ${error.message}</div>
+      console.error("Error loading schedules:", error);
+      // Create error message directly in the content area
+      scheduleContent.innerHTML = `
+        <div class="schedule-error">
+          <p>Error: ${error.message}</p>
+        </div>
       `;
     } finally {
-      // Hide loader and show details
-      scheduleLoader.classList.add('hidden');
-      scheduleDetails.classList.remove('hidden');
+      loader.classList.add('hidden');
     }
   }
-}
+
+  function renderScheduleTable(container, schedules) {
+    if (!schedules.length) {
+      container.innerHTML = '<div class="no-schedules">No schedules found</div>';
+      return;
+    }
+    
+    // Clear any existing content except the loader
+    const loader = container.querySelector('#scheduleLoader');
+    container.innerHTML = '';
+    if (loader) {
+      container.appendChild(loader);
+    }
+    
+    // Create table element
+    const table = document.createElement('table');
+    table.className = 'schedule-table';
+    
+    // Build table HTML with updated columns: ID, Type, Status, Replies, Created, Updated
+    table.innerHTML = `
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Type</th>
+          <th>Status</th>
+          <th>Replies</th>
+          <th>Created</th>
+          <th>Updated</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${schedules.map(schedule => `
+          <tr class="schedule-row" data-id="${schedule.id}">
+            <td>${schedule.id}</td>
+            <td>${schedule.type}</td>
+            <td><span class="status-badge status-${schedule.status.toLowerCase()}">${schedule.status}</span></td>
+            <td>${schedule.completedReplies}/${schedule.totalReplies}</td>
+            <td>${formatDate(schedule.createdAt)}</td>
+            <td>${formatDate(schedule.updatedAt)}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    `;
+    
+    // Append table to container
+    container.appendChild(table);
+    
+    // Add click event listeners to each row
+    document.querySelectorAll('.schedule-row').forEach(row => {
+      row.addEventListener('click', () => {
+        loadScheduleDetails(row.getAttribute('data-id'));
+      });
+    });
+  }
+
+  // Function to load schedule details
+  async function loadScheduleDetails(scheduleId) {
+    const scheduleContent = document.getElementById('scheduleContent');
+    const scheduleLoader = document.getElementById('scheduleLoader');
+    const scheduleDetails = document.getElementById('scheduleDetails');
+    
+    if (scheduleDetails && scheduleLoader && scheduleContent) {
+      // Show loader
+      scheduleLoader.classList.remove('hidden');
+      // Hide the table but keep the container visible
+      const table = scheduleContent.querySelector('.schedule-table');
+      if (table) table.style.display = 'none';
+      scheduleDetails.classList.add('hidden');
+      
+      try {
+        const response = await fetch(`/schedule/${scheduleId}`);
+        const data = await response.json();
+        
+        if (data.status === 'Success' && data.data) {
+          const schedule = data.data;
+          
+          // Create back button
+          const backBtn = document.createElement('button');
+          backBtn.className = 'schedule-back-button';
+          backBtn.innerHTML = '<i class="fas fa-arrow-left"></i> Back to schedules';
+          backBtn.addEventListener('click', () => {
+            scheduleDetails.classList.add('hidden');
+            // Show the table again
+            const table = scheduleContent.querySelector('.schedule-table');
+            if (table) table.style.display = '';
+          });
+          
+          // Determine schedule title based on type
+          let scheduleTitle = '';
+          if (schedule.type === 'troll') {
+            scheduleTitle = 'Troll Lord Schedule';
+          } else if (schedule.type === 'bootlick') {
+            scheduleTitle = 'Bootlicking Schedule';
+          }
+          
+          // Create schedule header
+          const header = document.createElement('div');
+          header.className = 'schedule-details-header';
+          header.innerHTML = `<h3>${scheduleTitle}</h3>`;
+          
+          // Create schedule info section
+          const info = document.createElement('div');
+          info.className = 'schedule-details-info';
+          
+          // Add appropriate info based on schedule type
+          if (schedule.type === 'troll') {
+            info.innerHTML = `
+              <p><strong>Tweet:</strong> <a href="${schedule.tweetLink}" target="_blank">${schedule.tweetLink}</a></p>
+              <p><strong>Created:</strong> ${formatDate(schedule.createdAt)}</p>
+              <p><strong>Status:</strong> ${schedule.status}</p>
+              <p><strong>Progress:</strong> ${schedule.completedReplies}/${schedule.totalReplies}</p>
+            `;
+          } else if (schedule.type === 'bootlick') {
+            const profileLinks = schedule.profileUrls.map(url => 
+              `<a href="${url}" target="_blank">${url}</a>`
+            ).join('<br>');
+            
+            info.innerHTML = `
+              <p><strong>Profiles:</strong><br>${profileLinks}</p>
+              <p><strong>Created:</strong> ${formatDate(schedule.createdAt)}</p>
+              <p><strong>Status:</strong> ${schedule.status}</p>
+              <p><strong>Progress:</strong> ${schedule.completedReplies}/${schedule.totalReplies}</p>
+            `;
+          }
+          
+          // Create responses section
+          const responsesHeader = document.createElement('h4');
+          responsesHeader.textContent = 'Responses';
+          
+          const responses = document.createElement('div');
+          responses.className = 'schedule-responses';
+          
+          if (schedule.responses && schedule.responses.length > 0) {
+            // Sort responses by number
+            const sortedResponses = [...schedule.responses].sort((a, b) => a.replyNumber - b.replyNumber);
+            
+            sortedResponses.forEach(response => {
+              const responseEl = document.createElement('div');
+              responseEl.className = 'schedule-response';
+              
+              // Create response header with number and status
+              const responseHeader = document.createElement('div');
+              responseHeader.className = 'schedule-response-header';
+              responseHeader.innerHTML = `
+                <strong>Reply #${response.replyNumber}</strong>
+                <span class="${response.success ? 'schedule-response-success' : 'schedule-response-error'}">
+                  ${response.success ? 'Success' : 'Failed'}
+                </span>
+              `;
+              
+              // Create response content
+              const responseContent = document.createElement('div');
+              
+              if (response.success) {
+                if (schedule.type === 'troll') {
+                  responseContent.innerHTML = `
+                    <p><strong>Response:</strong> ${response.responseText}</p>
+                    <p><strong>Time:</strong> ${formatDate(response.timestamp)}</p>
+                    ${response.replyId ? `<p><strong>Tweet:</strong> <a href="https://twitter.com/i/web/status/${response.replyId}" target="_blank">View on Twitter</a></p>` : ''}
+                  `;
+                } else if (schedule.type === 'bootlick') {
+                  responseContent.innerHTML = `
+                    <p><strong>Profile:</strong> <a href="${response.profileUrl}" target="_blank">${response.profileUrl}</a></p>
+                    <p><strong>Response:</strong> ${response.responseText}</p>
+                    <p><strong>Time:</strong> ${formatDate(response.timestamp)}</p>
+                    ${response.replyId ? `<p><strong>Tweet:</strong> <a href="https://twitter.com/i/web/status/${response.replyId}" target="_blank">View on Twitter</a></p>` : ''}
+                  `;
+                }
+              } else {
+                responseContent.innerHTML = `
+                  <p><strong>Error:</strong> ${response.error}</p>
+                  <p><strong>Time:</strong> ${formatDate(response.timestamp)}</p>
+                  ${schedule.type === 'bootlick' ? `<p><strong>Profile:</strong> <a href="${response.profileUrl}" target="_blank">${response.profileUrl}</a></p>` : ''}
+                `;
+              }
+              
+              responseEl.appendChild(responseHeader);
+              responseEl.appendChild(responseContent);
+              responses.appendChild(responseEl);
+            });
+          } else {
+            responses.innerHTML = '<div class="schedule-response">No responses yet</div>';
+          }
+          
+          // Assemble the details view
+          scheduleDetails.innerHTML = '';
+          scheduleDetails.appendChild(backBtn);
+          scheduleDetails.appendChild(header);
+          scheduleDetails.appendChild(info);
+          scheduleDetails.appendChild(responsesHeader);
+          scheduleDetails.appendChild(responses);
+        } else {
+          scheduleDetails.innerHTML = `
+            <button class="schedule-back-button" onclick="document.getElementById('scheduleDetails').classList.add('hidden'); document.getElementById('scheduleList').classList.remove('hidden');">
+              <i class="fas fa-arrow-left"></i> Back to schedules
+            </button>
+            <div class="no-schedules">Error loading schedule details: ${data.error || 'Unknown error'}</div>
+          `;
+        }
+      } catch (error) {
+        scheduleDetails.innerHTML = `
+          <button class="schedule-back-button" onclick="document.getElementById('scheduleDetails').classList.add('hidden'); document.querySelector('.schedule-table').style.display = '';">
+            <i class="fas fa-arrow-left"></i> Back to schedules
+          </button>
+          <div class="no-schedules">Error loading schedule details: ${error.message}</div>
+        `;
+      } finally {
+        // Hide loader and show details
+        scheduleLoader.classList.add('hidden');
+        scheduleDetails.classList.remove('hidden');
+      }
+    }
+  }
 
   // Checkbox functionality for troll lord and multiple profiles
   const trollLordCheckbox = document.getElementById('trollLord');
@@ -499,12 +501,14 @@ async function loadScheduleDetails(scheduleId) {
               <p style="color: #10b981; font-weight: 500;">${data.message}</p>
               ${data.scheduleId ? 
                 `<p style="margin-top: 10px;">
-                  You can <a href="#cta" style="color: #4361ee; text-decoration: underline;"
+                  You can <a href="#dashboard" style="color: #4361ee; text-decoration: underline;"
                   onclick="loadScheduleDetails('${data.scheduleId}'); return false;">track this schedule</a> in the "Active Schedules" panel.
                 </p>` : ''
               }
             `;
           }
+          // Refresh the schedule card after a schedule is created
+          loadSchedules();
         }
         
         startTimer('troll');
@@ -582,21 +586,19 @@ async function loadScheduleDetails(scheduleId) {
         } else if (data.message) {
           // Multiple profiles mode response
           if (bootlickResponseArea) {
-            // Multiple profiles mode response
-            if (bootlickResponseArea) {
-              // Use different color based on status
-              const statusColor = data.status === "Warning" ? "#f59e0b" : "#10b981";
-              bootlickResponseArea.innerHTML = `
-                <p style="color: ${statusColor}; font-weight: 500;">${data.message}</p>
-                ${data.scheduleId ? 
-                  `<p style="margin-top: 10px;">
-                    You can <a href="#cta" style="color: #4361ee; text-decoration: underline;"
-                    onclick="loadScheduleDetails('${data.scheduleId}'); return false;">track this schedule</a> in the "Active Schedules" panel.
-                  </p>` : ''
-                }
-              `;
-            }
+            const statusColor = data.status === "Warning" ? "#f59e0b" : "#10b981";
+            bootlickResponseArea.innerHTML = `
+              <p style="color: ${statusColor}; font-weight: 500;">${data.message}</p>
+              ${data.scheduleId ? 
+                `<p style="margin-top: 10px;">
+                  You can <a href="#dashboard" style="color: #4361ee; text-decoration: underline;"
+                  onclick="loadScheduleDetails('${data.scheduleId}'); return false;">track this schedule</a> in the "Active Schedules" panel.
+                </p>` : ''
+              }
+            `;
           }
+          // Refresh the schedule card after a schedule is created
+          loadSchedules();
         }
         
         startTimer('bootlick');
@@ -620,34 +622,21 @@ async function loadScheduleDetails(scheduleId) {
 
   // Format timestamp into [DD-MM-YYYY, HH:MM:SS] format in local timezone
   function formatLogTimestamp(logEntry) {
-    // Regular expression to match ISO timestamp in logs [yyyy-mm-ddThh:mm:ss.sssZ]
     const timestampRegex = /\[(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z)\]/;
-    
-    // Check if the log entry contains a timestamp
     const match = logEntry.match(timestampRegex);
     if (!match) return logEntry;
-    
-    // Extract the ISO timestamp
     const isoTimestamp = match[1];
-    
-    // Parse the timestamp and convert to local timezone
     const date = new Date(isoTimestamp);
-    
-    // Format the date in the requested format [DD-MM-YYYY, HH:MM:SS]
     const day = date.getDate().toString().padStart(2, '0');
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
     const year = date.getFullYear();
     const hours = date.getHours().toString().padStart(2, '0');
     const minutes = date.getMinutes().toString().padStart(2, '0');
     const seconds = date.getSeconds().toString().padStart(2, '0');
-    
-    const formattedDate = `[${year}-${month}-${day}`+`T`+`${hours}:${minutes}:${seconds}]`;
-    
-    // Replace the ISO timestamp with the formatted one
+    const formattedDate = `[${year}-${month}-${day}T${hours}:${minutes}:${seconds}]`;
     return logEntry.replace(timestampRegex, formattedDate);
   }
 
-  // Function to poll logs with better error handling and timestamp formatting
   async function fetchLogs() {
     try {
       const response = await fetch("/logs");
@@ -672,11 +661,9 @@ async function loadScheduleDetails(scheduleId) {
       : "No logs available yet";
   }, CONFIG.DEBOUNCE_DELAY);
 
-  // Replace existing polling setup with improved version
   setInterval(debouncedPollLogs, CONFIG.POLL_INTERVAL);
   debouncedPollLogs();
 
-  // At the end of your DOMContentLoaded event
   console.log("Page loaded, loading schedules");
-  setTimeout(loadSchedules, 1000); // Slight delay to ensure DOM is ready
+  setTimeout(loadSchedules, 1000);
 });
