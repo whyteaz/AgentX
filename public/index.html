@@ -24,9 +24,9 @@
     <div class="logo">AgentX</div>
     <div class="nav-links">
       <a href="#home"><i class="fas fa-home"></i></a>
-      <a href="#app">App</a>
-      <a href="#features">Features</a>
-      <a href="#cta">Contact</a>
+      <a href="#troll">Troll</a>
+      <a href="#bootlick">Bootlick</a>
+      <a href="#dashboard">Dashboard</a>
     </div>
   </nav>
 
@@ -34,9 +34,9 @@
     <!-- Section 1 -->
     <div class="section" id="section1">
       <div class="content">
-        <h1>Trolling as a Service</h1>
-        <p>AI-powered trolling on autopilot</p>
-        <a href="#app" class="scroll-down">
+        <h1>AgentX</h1>
+        <p>AI-powered Agent: Where Trolling Art Meets Bootlicking Science</p>
+        <a href="#troll" class="scroll-down">
           <span class="arrow-down">↓</span>
       </a>
       </div>
@@ -73,7 +73,7 @@
                 </div>
                 <div class="form-group checkbox">
                   <input type="checkbox" id="trollLord" name="trollLord">
-                  <label for="trollLord">Enable Troll Lord Mode</label>
+                  <label class="remove-margin" for="trollLord">Enable Troll Lord Mode</label>
                   <img id="trolllordImg" src="assets/trolllord.png" alt="Troll Lord" class="hidden">
                 </div>
                 <button type="submit" id="submitBtn">Generate Troll Response</button>
@@ -102,11 +102,11 @@
               <p>Our AI Bootlicking Agent uses state-of-the-art AI to deliver sycophantic Twitter replies to your chosen accounts.</p>
               <div class="modes">
                 <div class="mode">
-                  <h4><i class="fas fa-user card-icon" style="color: #78ffd6;"></i> Standard Mode</h4>
+                  <h4><i class="fas fa-user card-icon" style="color: #006646;"></i> Standard Mode</h4>
                   <p>Generate one bootlicking reply to a profile's latest tweet with a 15-minute cooldown.</p>
                 </div>
                 <div class="mode">
-                  <h4><i class="fas fa-users card-icon" style="color: #78ffd6;"></i> Multiple Profiles Mode</h4>
+                  <h4><i class="fas fa-users card-icon" style="color: #006646;"></i> Multiple Profiles Mode</h4>
                   <p>Schedule successive bootlicking replies to multiple profiles (one every 16 minutes).</p>
                 </div>
               </div>
@@ -121,7 +121,7 @@
                 </div>
                 <div class="form-group checkbox">
                   <input type="checkbox" id="multipleProfiles" name="multipleProfiles">
-                  <label for="multipleProfiles">Enable Multiple Profiles Mode</label>
+                  <label class="remove-margin" for="multipleProfiles">Enable Multiple Profiles Mode</label>
                 </div>
                 <button type="submit" id="bootlickSubmitBtn">Generate Bootlicking Response</button>
                 <div id="bootlickTimer"></div>
@@ -129,7 +129,7 @@
             </div>
           </div>
           <div class="response-header">
-            <h3><i class="fas fa-reply card-icon" style="color: #78ffd6;"></i> Response</h3>
+            <h3><i class="fas fa-reply card-icon" style="color: #006646;"></i> Response</h3>
           </div>
           <div id="bootlickResponseArea" class="response-area"></div>
         </div>
@@ -142,7 +142,7 @@
         <!-- Schedule Tracking Panel -->
         <div class="schedule-tracking-section">
           <div class="schedule-header" onclick="toggleSchedules()">
-            <h3><i class="fas fa-calendar-alt card-icon" style="color: #4CC9F0;"></i> Active Schedules</h3>
+            <h3><i class="fas fa-calendar-alt card-icon" style="color: #4CC9F0;"></i> Queued Schedules</h3>
             <svg id="scheduleToggleIcon" class="toggle-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
             </svg>
@@ -152,7 +152,6 @@
               <div class="spinner"></div>
               <p style="color: #555;">Loading schedules...</p>
             </div>
-            <div id="scheduleList" class="schedule-list hidden"></div>
             <div id="scheduleDetails" class="schedule-details hidden"></div>
           </div>
         </div>
@@ -176,7 +175,7 @@
   <script>
     document.addEventListener('DOMContentLoaded', function() {
       new fullpage('#fullpage', {
-        anchors: ['home', 'app', 'features', 'cta'],
+        anchors: ['home', 'troll', 'bootlick', 'dashboard'],
         navigation: true,
         navigationPosition: 'right',
         menu: '.nav-links',

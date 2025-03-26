@@ -1,23 +1,23 @@
-// route.js
 const express = require("express");
 const path = require("path");
 const jwt = require("jsonwebtoken");
 const config = require("./config");
 const { log, getLogs } = require("./logger");
-const { 
-  runAgent, 
-  scheduleTrollReplies, 
-  runBootlickAgent, 
-  scheduleBootlickReplies, 
-  trollStatuses, 
-  bootlickStatuses 
+const {
+  runAgent,
+  scheduleTrollReplies,
+  runBootlickAgent,
+  scheduleBootlickReplies,
+  trollStatuses,
+  bootlickStatuses,
+  getUserSchedules,
+  getScheduleById
 } = require("./agent");
 const { requireAuth } = require("./middleware");
-const { getUserSchedules, getScheduleById } = require("./supabase");
 
 const router = express.Router();
 
-// Expose Supabase config for client-side initialization.
+// Expose config for client-side initialization.
 router.get("/api/config", (req, res) => {
   res.json({
     supabaseUrl: config.supabaseUrl,
@@ -25,7 +25,7 @@ router.get("/api/config", (req, res) => {
   });
 });
 
-// Set a secure cookie with the Supabase token.
+// Set a secure cookie with the token.
 router.post("/api/set-cookie", (req, res) => {
   const { token } = req.body;
   if (!token) return res.status(400).json({ error: "No token provided" });
@@ -53,17 +53,18 @@ router.post("/trigger", requireAuth, async (req, res, next) => {
     const trollLordMode = trollLord === "true";
     log("info", "Troll Lord mode:", trollLordMode);
 
-    // Validate tweet link (accepts URLs from twitter.com or x.com)
     if (!tweetLink || !/^https:\/\/(twitter\.com|x\.com)\/.*\/status\/\d+/.test(tweetLink)) {
       return res.status(400).json({ error: "Invalid tweet link provided." });
     }
 
     if (trollLordMode) {
       const schedule = await scheduleTrollReplies(tweetLink, req.userId);
-      res.json({ 
-        status: "Success", 
+      const schedulesForUser = getUserSchedules(req.userId);
+      res.json({
+        status: "Success",
         message: "Troll Lord mode activated: 10 replies scheduled.",
-        scheduleId: schedule.scheduleId
+        scheduleId: schedule.scheduleId,
+        schedules: schedulesForUser
       });
     } else {
       const result = await runAgent(tweetLink);
@@ -86,35 +87,34 @@ router.post("/bootlick", requireAuth, async (req, res, next) => {
       return res.status(400).json({ error: "No profile URLs provided." });
     }
 
-    // Using req.userId from middleware
     if (!multipleProfilesMode) {
       const profileUrl = profileUrls.trim();
-      
-      // Validate profile URL (accepts URLs from twitter.com or x.com)
       if (!/^https:\/\/(twitter\.com|x\.com)\/[^/]+\/?$/.test(profileUrl)) {
-        return res.status(400).json({ error: "Invalid profile URL format. Should be like: https://twitter.com/username" });
+        return res.status(400).json({
+          error:
+            "Invalid profile URL format. Should be like: https://twitter.com/username"
+        });
       }
-      
       const result = await runBootlickAgent(profileUrl);
       res.json({ status: "Success", data: result });
     } else {
-      // For multiple profiles mode, schedule bootlicking replies
       const result = await scheduleBootlickReplies(profileUrls, req.userId);
-      
-      // Check if there was an error with the first profile
+      const schedulesForUser = getUserSchedules(req.userId);
       if (result.firstError) {
-        res.json({ 
-          status: "Warning", 
+        res.json({
+          status: "Warning",
           message: `Multiple Profiles mode activated but encountered an issue with the first profile: ${result.firstError}. Remaining profiles will be processed as scheduled.`,
           statusKey: result.statusKey,
-          scheduleId: result.scheduleId
+          scheduleId: result.scheduleId,
+          schedules: schedulesForUser
         });
       } else {
-        res.json({ 
-          status: "Success", 
-          message: `Multiple Profiles mode activated: ${result.totalProfiles} replies scheduled with 16-minute intervals.`,
+        res.json({
+          status: "Success",
+          message: `Multiple Profiles mode activated: ${result.totalReplies} replies scheduled with 16-minute intervals.`,
           statusKey: result.statusKey,
-          scheduleId: result.scheduleId
+          scheduleId: result.scheduleId,
+          schedules: schedulesForUser
         });
       }
     }
@@ -127,8 +127,8 @@ router.post("/bootlick", requireAuth, async (req, res, next) => {
 // /schedules endpoint: returns all schedules for the current user
 router.get("/schedules", requireAuth, async (req, res, next) => {
   try {
-    const schedules = await getUserSchedules(req.userId);
-    res.json({ status: "Success", data: schedules });
+    const schedulesForUser = getUserSchedules(req.userId);
+    res.json({ status: "Success", data: schedulesForUser });
   } catch (error) {
     log("error", "Error in /schedules:", error);
     next(error);
@@ -139,17 +139,15 @@ router.get("/schedules", requireAuth, async (req, res, next) => {
 router.get("/schedule/:id", requireAuth, async (req, res, next) => {
   try {
     const scheduleId = req.params.id;
-    const schedule = await getScheduleById(scheduleId);
-    
+    const schedule = getScheduleById(scheduleId);
     if (!schedule) {
       return res.status(404).json({ error: "Schedule not found" });
     }
-    
-    // Check if the user owns this schedule
-    if (schedule.user_id !== req.userId) {
-      return res.status(403).json({ error: "Forbidden - You don't have access to this schedule" });
+    if (schedule.userId !== req.userId) {
+      return res
+        .status(403)
+        .json({ error: "Forbidden - You don't have access to this schedule" });
     }
-    
     res.json({ status: "Success", data: schedule });
   } catch (error) {
     log("error", `Error in /schedule/${req.params.id}:`, error);
@@ -160,14 +158,16 @@ router.get("/schedule/:id", requireAuth, async (req, res, next) => {
 // Endpoint to retrieve Troll Lord status.
 router.get("/troll-status", requireAuth, (req, res) => {
   const tweetLink = req.query.tweetLink;
-  if (!tweetLink) return res.status(400).json({ error: "Missing tweetLink parameter" });
+  if (!tweetLink)
+    return res.status(400).json({ error: "Missing tweetLink parameter" });
   res.json({ status: "Success", data: trollStatuses[tweetLink] || [] });
 });
 
 // Endpoint to retrieve Bootlick status.
 router.get("/bootlick-status", requireAuth, (req, res) => {
   const statusKey = req.query.statusKey;
-  if (!statusKey) return res.status(400).json({ error: "Missing statusKey parameter" });
+  if (!statusKey)
+    return res.status(400).json({ error: "Missing statusKey parameter" });
   res.json({ status: "Success", data: bootlickStatuses[statusKey] || [] });
 });
 

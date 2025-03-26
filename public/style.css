@@ -59,7 +59,9 @@
 #section1, #section2, #section3, #section4 {
   min-height: 100vh;
   overflow: hidden;
-}/* Reset and base styles */
+}
+
+/* Reset and base styles */
 * {
   margin: 0;
   padding: 0;
@@ -193,7 +195,7 @@ nav {
   font-weight: 400;
 }
 
-/* Section 2 - App */
+/* Section 2 - Troll */
 #section2 {
   background: linear-gradient(135deg, #093028 0%, #237A57 100%);
   position: relative;
@@ -343,7 +345,7 @@ button::before {
   transition: 0.5s;
 }
 
-/* button:hover {
+button:hover {
   transform: translateY(-3px);
   box-shadow: 0 10px 20px rgba(0,0,0,0.2);
 }
@@ -353,14 +355,13 @@ button:hover::before {
 }
 
 button:disabled {
-  background: rgba(255,255,255,0.1);
+  background: linear-gradient(90deg, rgba(67, 97, 238, 0.4) 0%, rgba(67, 97, 238, 0.5) 100%);
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
-} */
+}
 
 #timer {
-  margin-top: 15px;
   color: #e74c3c;
   font-weight: 500;
   text-align: center;
@@ -400,7 +401,7 @@ button:disabled {
   align-items: center;
 }
 
-/* Section 3 - Features */
+/* Section 3 - Dashboard */
 #section3 {
   background: linear-gradient(135deg, #a8ff78 0%, #78ffd6 100%);
   position: relative;
@@ -444,53 +445,7 @@ button:disabled {
   border-radius: 4px;
 }
 
-/* .features {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 30px;
-} */
-
-.feature {
-  background-color: #ffffff;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  padding: 40px 30px;
-  border-radius: 32px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s, box-shadow 0.3s;
-  text-align: left;
-}
-
-.feature h3 {
-  font-size: 26px;
-  font-weight: 700;
-  margin-bottom: 20px;
-  color: #333;
-  position: relative;
-  padding-bottom: 15px;
-  display: flex;
-  align-items: center;
-}
-
-.feature h3::after {
-  content: '';
-  position: absolute;
-  width: 40px;
-  height: 4px;
-  bottom: 0;
-  left: 0;
-  background-color: rgba(0, 0, 0, 0.2);
-  border-radius: 2px;
-}
-
-.feature p {
-  color: #555;
-  font-size: 18px;
-  line-height: 1.6;
-}
-
-/* Section 4 - CTA */
+/* Section 4 - Dashboard */
 #section4 {
   background: linear-gradient(135deg, #4CC9F0 0%, #560BAD 100%);
   position: relative;
@@ -590,19 +545,10 @@ button:disabled {
   background: #fff;
 }
 
-/* Utility classes */
-.hidden {
-  display: none;
-}
-
 /* Responsive adjustments */
 @media (max-width: 768px) {
   #section1 h1 {
     font-size: 40px;
-  }
-  
-  .features {
-    grid-template-columns: 1fr;
   }
   
   .nav-links {
@@ -673,6 +619,10 @@ button:disabled {
 .hidden {
   display: none !important;
 } 
+
+.remove-margin {
+  margin: 0 !important;
+}
 
 /* Terminal-like Server Logs Styling */
 .server-logs-section {
@@ -809,12 +759,6 @@ button:disabled {
   font-weight: 600;
 }
 
-.schedule-content {
-  padding: 20px;
-  max-height: 400px;
-  overflow: auto;
-}
-
 .schedule-list {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -854,21 +798,6 @@ button:disabled {
   font-weight: 500;
   text-transform: uppercase;
   margin-top: 10px;
-}
-
-.status-active {
-  background-color: #e3f2fd;
-  color: #1976d2;
-}
-
-.status-completed {
-  background-color: #e8f5e9;
-  color: #388e3c;
-}
-
-.status-failed {
-  background-color: #ffebee;
-  color: #d32f2f;
 }
 
 .schedule-back-button {
@@ -945,9 +874,145 @@ button:disabled {
   color: #d32f2f;
 }
 
+/* Schedule Table Styling */
+.schedule-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #ffffff;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  margin: 0;
+  font-size: 14px;
+  height: calc(100% - 40px); /* Adjust height to fit container minus padding */
+}
+
+.schedule-table th {
+  background: #f8f9fa;
+  padding: 12px 15px;
+  text-align: left;
+  font-weight: 600;
+  color: #333;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.schedule-table td {
+  padding: 12px 15px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  color: #555;
+}
+
+.schedule-row {
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.schedule-row:hover {
+  background-color: #f0f4f8;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.schedule-row:last-child td {
+  border-bottom: none;
+}
+
+/* Status badges for different states */
+.status-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.status-active {
+  background-color: #e3f2fd;
+  color: #1976d2;
+}
+
+.status-completed {
+  background-color: #e8f5e9;
+  color: #388e3c;
+}
+
+.status-failed {
+  background-color: #ffebee;
+  color: #d32f2f;
+}
+
+.status-pending {
+  background-color: #fff8e1;
+  color: #f57c00;
+}
+
+/* Make the schedule content take full available height */
+.schedule-content {
+  height: calc(100% - 60px); /* Subtract header height */
+  overflow: auto;
+  scrollbar-width: thin;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Error message styling */
+.schedule-error {
+  padding: 20px;
+  text-align: center;
+  color: #ef4444;
+  font-weight: 500;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 8px;
+  margin: 20px 0;
+}
+
+/* No schedules message */
 .no-schedules {
   text-align: center;
   padding: 30px;
   color: #6c757d;
   font-size: 16px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 8px;
+  margin: 20px 0;
+}
+
+/* Custom scrollbar for the table container */
+.schedule-content::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.schedule-content::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.schedule-content::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+.schedule-content::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* New rules to stick the button to the bottom of its container */
+.form-section {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  height: 100%;
+}
+.form-section form {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.form-section button {
+  margin-top: auto;
 }
