@@ -56,20 +56,17 @@ function formatDate(dateString) {
 
 // Simplified function to load schedules
 async function loadSchedules() {
-  const elements = {
-    list: document.getElementById('scheduleList'),
-    loader: document.getElementById('scheduleLoader')
-  };
+  const scheduleContent = document.getElementById('scheduleContent');
+  const loader = document.getElementById('scheduleLoader');
 
-  if (!elements.list || !elements.loader) {
+  if (!scheduleContent || !loader) {
     console.error("Required elements not found");
     return;
   }
 
   try {
-    elements.loader.classList.remove('hidden');
-    elements.list.classList.add('hidden');
-
+    loader.classList.remove('hidden');
+    
     // Add error handling for network issues
     const response = await fetch('/schedules').catch(err => {
       console.error("Network error fetching schedules:", err);
@@ -94,48 +91,63 @@ async function loadSchedules() {
       throw new Error("Invalid data structure received from server");
     }
     
-    renderScheduleList(elements.list, data.data || []);
+    renderScheduleTable(scheduleContent, data.data || []);
   } catch (error) {
     console.error("Error loading schedules:", error);
-    elements.list.innerHTML = `<div class="no-schedules">Error: ${error.message}</div>`;
+    // Create error message directly in the content area
+    scheduleContent.innerHTML = `
+      <div class="schedule-error">
+        <p>Error: ${error.message}</p>
+      </div>
+    `;
   } finally {
-    elements.loader.classList.add('hidden');
-    elements.list.classList.remove('hidden');
+    loader.classList.add('hidden');
   }
 }
 
-function renderScheduleList(container, schedules) {
+function renderScheduleTable(container, schedules) {
   if (!schedules.length) {
     container.innerHTML = '<div class="no-schedules">No schedules found</div>';
     return;
   }
-
-  const table = `
-    <table class="schedule-table">
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>Type</th>
-          <th>ID</th>
-          <th>Status</th>
-          <th>Created</th>
+  
+  // Clear any existing content except the loader
+  const loader = container.querySelector('#scheduleLoader');
+  container.innerHTML = '';
+  if (loader) {
+    container.appendChild(loader);
+  }
+  
+  // Create table element
+  const table = document.createElement('table');
+  table.className = 'schedule-table';
+  
+  // Build table HTML
+  table.innerHTML = `
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Type</th>
+        <th>ID</th>
+        <th>Status</th>
+        <th>Created</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${schedules.map((schedule, index) => `
+        <tr class="schedule-row" data-id="${schedule.id}">
+          <td>${index+1}</td>
+          <td>${schedule.type}</td>
+          <td>${schedule.id}</td>
+          <td><span class="status-badge status-${schedule.status.toLowerCase()}">${schedule.status}</span></td>
+          <td>${formatDate(schedule.created_at)}</td>
         </tr>
-      </thead>
-      <tbody>
-        ${schedules.map((schedule, index) => `
-          <tr class="schedule-row" data-id="${schedule.id}">
-            <td>${index+1}</td>
-            <td>${schedule.type}</td>
-            <td>${schedule.id}</td>
-            <td><span class="status-badge status-${schedule.status.toLowerCase()}">${schedule.status}</span></td>
-            <td>${formatDate(schedule.created_at)}</td>
-          </tr>
-        `).join('')}
-      </tbody>
-    </table>
+      `).join('')}
+    </tbody>
   `;
   
-  container.innerHTML = table;
+  // Append table to container
+  container.appendChild(table);
   
   // Add click event listeners to each row
   document.querySelectorAll('.schedule-row').forEach(row => {
@@ -147,14 +159,16 @@ function renderScheduleList(container, schedules) {
 
 // Function to load schedule details
 async function loadScheduleDetails(scheduleId) {
-  const scheduleList = document.getElementById('scheduleList');
+  const scheduleContent = document.getElementById('scheduleContent');
   const scheduleLoader = document.getElementById('scheduleLoader');
   const scheduleDetails = document.getElementById('scheduleDetails');
   
-  if (scheduleDetails && scheduleLoader) {
+  if (scheduleDetails && scheduleLoader && scheduleContent) {
     // Show loader
     scheduleLoader.classList.remove('hidden');
-    scheduleList.classList.add('hidden');
+    // Hide the table but keep the container visible
+    const table = scheduleContent.querySelector('.schedule-table');
+    if (table) table.style.display = 'none';
     scheduleDetails.classList.add('hidden');
     
     try {
@@ -170,7 +184,9 @@ async function loadScheduleDetails(scheduleId) {
         backBtn.innerHTML = '<i class="fas fa-arrow-left"></i> Back to schedules';
         backBtn.addEventListener('click', () => {
           scheduleDetails.classList.add('hidden');
-          scheduleList.classList.remove('hidden');
+          // Show the table again
+          const table = scheduleContent.querySelector('.schedule-table');
+          if (table) table.style.display = '';
         });
         
         // Determine schedule title based on type
@@ -287,7 +303,7 @@ async function loadScheduleDetails(scheduleId) {
       }
     } catch (error) {
       scheduleDetails.innerHTML = `
-        <button class="schedule-back-button" onclick="document.getElementById('scheduleDetails').classList.add('hidden'); document.getElementById('scheduleList').classList.remove('hidden');">
+        <button class="schedule-back-button" onclick="document.getElementById('scheduleDetails').classList.add('hidden'); document.querySelector('.schedule-table').style.display = '';">
           <i class="fas fa-arrow-left"></i> Back to schedules
         </button>
         <div class="no-schedules">Error loading schedule details: ${error.message}</div>
