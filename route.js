@@ -60,10 +60,15 @@ router.post("/trigger", requireAuth, async (req, res, next) => {
 
     if (trollLordMode) {
       const schedule = await scheduleTrollReplies(tweetLink, req.userId);
+      
+      // Get updated schedules after creating the new schedule
+      const schedules = await getUserSchedules(req.userId);
+      
       res.json({ 
         status: "Success", 
         message: "Troll Lord mode activated: 10 replies scheduled.",
-        scheduleId: schedule.scheduleId
+        scheduleId: schedule.scheduleId,
+        schedules: schedules // Return updated schedules
       });
     } else {
       const result = await runAgent(tweetLink);
@@ -101,20 +106,25 @@ router.post("/bootlick", requireAuth, async (req, res, next) => {
       // For multiple profiles mode, schedule bootlicking replies
       const result = await scheduleBootlickReplies(profileUrls, req.userId);
       
+      // Get updated schedules after creating the new schedule
+      const schedules = await getUserSchedules(req.userId);
+      
       // Check if there was an error with the first profile
       if (result.firstError) {
         res.json({ 
           status: "Warning", 
           message: `Multiple Profiles mode activated but encountered an issue with the first profile: ${result.firstError}. Remaining profiles will be processed as scheduled.`,
           statusKey: result.statusKey,
-          scheduleId: result.scheduleId
+          scheduleId: result.scheduleId,
+          schedules: schedules // Return updated schedules
         });
       } else {
         res.json({ 
           status: "Success", 
           message: `Multiple Profiles mode activated: ${result.totalProfiles} replies scheduled with 16-minute intervals.`,
           statusKey: result.statusKey,
-          scheduleId: result.scheduleId
+          scheduleId: result.scheduleId,
+          schedules: schedules // Return updated schedules
         });
       }
     }
