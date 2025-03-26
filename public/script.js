@@ -1,3 +1,31 @@
+// Constants
+const CONFIG = {
+  POLL_INTERVAL: 15000,
+  COUNTDOWN_DURATION: 900,
+  TIMER_KEYS: {
+    TROLL: 'submissionTimerEnd',
+    BOOTLICK: 'bootlickSubmissionTimerEnd'
+  },
+  DEBOUNCE_DELAY: 500
+};
+
+// Utility functions
+const debounce = (fn, delay) => {
+  let timeoutId;
+  return (...args) => {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => fn(...args), delay);
+  };
+};
+
+const handleApiError = async (response) => {
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.message || `HTTP error ${response.status}`);
+  }
+  return response.json();
+};
+
 document.addEventListener('DOMContentLoaded', async () => {
   // Skip fullPage-related code on login page
   if (window.location.pathname.includes('login')) {
@@ -28,60 +56,47 @@ function formatDate(dateString) {
 
 // Simplified function to load schedules
 async function loadSchedules() {
-  console.log("Loading schedules started");
-  
-  const scheduleList = document.getElementById('scheduleList');
-  const scheduleLoader = document.getElementById('scheduleLoader');
-  
-  // Check if elements exist
-  if (!scheduleList) {
-    console.error("scheduleList element not found!");
+  const elements = {
+    list: document.getElementById('scheduleList'),
+    loader: document.getElementById('scheduleLoader')
+  };
+
+  if (!elements.list || !elements.loader) {
+    console.error("Required elements not found");
     return;
   }
-  if (!scheduleLoader) {
-    console.error("scheduleLoader element not found!");
-    return;
-  }
-  
-  // Show loader, hide list
-  scheduleLoader.classList.remove('hidden');
-  scheduleList.classList.add('hidden');
-  
+
   try {
-    console.log("Fetching from /schedules");
+    elements.loader.classList.remove('hidden');
+    elements.list.classList.add('hidden');
+
     const response = await fetch('/schedules');
-    console.log("Fetch response status:", response.status);
-    
-    const data = await response.json();
-    console.log("Received data:", data);
-    
-    // Clear and show list
-    scheduleList.innerHTML = '';
-    
-    if (!data.data || data.data.length === 0) {
-      scheduleList.innerHTML = '<div class="no-schedules">No schedules found</div>';
-    } else {
-      // Just show the raw data for debugging
-      data.data.forEach((schedule, index) => {
-        const item = document.createElement('div');
-        item.className = 'schedule-card';
-        item.innerHTML = `
-          <h4>Schedule #${index+1}: ${schedule.type}</h4>
-          <div>ID: ${schedule.id}</div>
-          <div>Status: ${schedule.status}</div>
-          <div>Created: ${schedule.created_at}</div>
-        `;
-        scheduleList.appendChild(item);
-      });
-    }
+    const data = await handleApiError(response);
+
+    renderScheduleList(elements.list, data.data || []);
   } catch (error) {
     console.error("Error loading schedules:", error);
-    scheduleList.innerHTML = `<div class="no-schedules">Error: ${error.message}</div>`;
+    elements.list.innerHTML = `<div class="no-schedules">Error: ${error.message}</div>`;
   } finally {
-    // Hide loader and show list
-    scheduleLoader.classList.add('hidden');
-    scheduleList.classList.remove('hidden');
+    elements.loader.classList.add('hidden');
+    elements.list.classList.remove('hidden');
   }
+}
+
+function renderScheduleList(container, schedules) {
+  if (!schedules.length) {
+    container.innerHTML = '<div class="no-schedules">No schedules found</div>';
+    return;
+  }
+
+  container.innerHTML = schedules.map((schedule, index) => `
+    <div class="schedule-card">
+      <h4>Schedule #${index+1}: ${schedule.type}</h4>
+      <div>ID: ${schedule.id}</div>
+      <div>Status: ${schedule.status}</div>
+      <div>Created: ${formatDate(schedule.created_at)}</div>
+    </div>
+  `).join('');
 }
 
 // Function to load schedule details
@@ -571,37 +586,33 @@ async function loadScheduleDetails(scheduleId) {
   }
 
   // Function to poll logs with better error handling and timestamp formatting
-  function pollLogs() {
-    fetch("/logs")
-      .then(response => {
-        if (!response.ok) {
-          throw new Error(`HTTP error ${response.status}`);
-        }
-        return response.json();
-      })
-      .then(data => {
-        const logOutput = document.getElementById("logOutput");
-        if (logOutput && data && Array.isArray(data.logs)) {
-          // Format each log entry's timestamp before displaying
-          const formattedLogs = data.logs.map(formatLogTimestamp);
-          logOutput.innerText = formattedLogs.join("\n");
-        } else if (logOutput) {
-          // Handle case where logs aren't available
-          logOutput.innerText = "No logs available yet";
-        }
-      })
-      .catch(err => {
-        console.error("Error fetching logs:", err);
-        // Don't try again immediately if rate limited
-        if (err.message.includes("429")) {
-          console.log("Rate limited, will retry later");
-        }
-      });
+  async function fetchLogs() {
+    try {
+      const response = await fetch("/logs");
+      const data = await handleApiError(response);
+      return data.logs || [];
+    } catch (error) {
+      console.error("Error fetching logs:", error);
+      if (error.message.includes("429")) {
+        await new Promise(resolve => setTimeout(resolve, CONFIG.POLL_INTERVAL * 2));
+      }
+      return [];
+    }
   }
 
-  const pollInterval = 15000; // 15 seconds instead of 5
-  setInterval(pollLogs, pollInterval);
-  pollLogs(); // Initial poll
+  const debouncedPollLogs = debounce(async () => {
+    const logOutput = document.getElementById("logOutput");
+    if (!logOutput) return;
+  
+    const logs = await fetchLogs();
+    logOutput.innerText = logs.length > 0 
+      ? logs.map(formatLogTimestamp).join("\n")
+      : "No logs available yet";
+  }, CONFIG.DEBOUNCE_DELAY);
+
+  // Replace existing polling setup with improved version
+  setInterval(debouncedPollLogs, CONFIG.POLL_INTERVAL);
+  debouncedPollLogs();
 
   // At the end of your DOMContentLoaded event
   console.log("Page loaded, loading schedules");
