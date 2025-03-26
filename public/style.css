@@ -671,7 +671,7 @@ button:disabled {
 }
 
 .hidden {
-  display: none;
+  display: none !important;
 } 
 
 /* Terminal-like Server Logs Styling */
@@ -719,6 +719,7 @@ button:disabled {
   text-align: left;
   letter-spacing: 0;
   background: #1a1a1a;
+  border-radius: 0 0 8px 8px;
 }
 
 .log-output::before {
