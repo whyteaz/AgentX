@@ -130,6 +130,16 @@ nav {
   width: 30%;
 }
 
+/* Add back these styles for active state */
+.nav-links a.active {
+  color: #fff;
+  font-weight: 700;
+}
+
+.nav-links a.active::after {
+  width: 100%;
+}
+
 /* fullPage.js sections */
 .section {
   text-align: center;
