@@ -15,7 +15,8 @@ const requiredEnvVars = [
   "SUPABASE_URL",
   "SUPABASE_ANON_KEY",
   "SUPABASE_SERVICE_KEY",
-  "SUPABASE_JWT_SECRET"
+  "SUPABASE_JWT_SECRET",
+  "AZURE_APPLICATION_INSIGHTS_CONNECTION_STRING"
 ];
 
 requiredEnvVars.forEach((key) => {
@@ -41,5 +42,7 @@ module.exports = {
   supabaseUrl: process.env.SUPABASE_URL,
   supabaseAnonKey: process.env.SUPABASE_ANON_KEY,
   supabaseServiceKey: process.env.SUPABASE_SERVICE_KEY,
-  supabaseJwtSecret: process.env.SUPABASE_JWT_SECRET
+  supabaseJwtSecret: process.env.SUPABASE_JWT_SECRET,
+  // Azure Application Insights
+  azureAppInsightsConnectionString: process.env.AZURE_APPLICATION_INSIGHTS_CONNECTION_STRING
 };
