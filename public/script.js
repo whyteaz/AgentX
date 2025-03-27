@@ -58,35 +58,27 @@ document.addEventListener('DOMContentLoaded', async () => {
   async function loadSchedules() {
     const scheduleContent = document.getElementById('scheduleContent');
     const loader = document.getElementById('scheduleLoader');
-
     if (!scheduleContent || !loader) {
-      console.error("Required elements not found");
+      // Required elements not found, exit silently.
       return;
     }
-
     try {
       loader.classList.remove('hidden');
       
-      // Add error handling for network issues
+      // Fetch schedules from the server
       const response = await fetch('/schedules').catch(err => {
-        console.error("Network error fetching schedules:", err);
         throw new Error(`Network error: ${err.message}`);
       });
       
-      // Handle non-OK responses
       if (!response.ok) {
         const errorText = await response.text().catch(() => "Unknown error");
-        console.error(`Server error (${response.status}):`, errorText);
         throw new Error(`Server error (${response.status}): ${errorText}`);
       }
       
-      // Parse JSON with error handling
       const data = await response.json().catch(err => {
-        console.error("JSON parse error:", err);
         throw new Error("Invalid response format from server");
       });
       
-      // Handle missing or invalid data structure
       if (!data || typeof data !== 'object') {
         throw new Error("Invalid data structure received from server");
       }
@@ -94,7 +86,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       renderScheduleTable(scheduleContent, data.data || []);
     } catch (error) {
       console.error("Error loading schedules:", error);
-      // Create error message directly in the content area
       scheduleContent.innerHTML = `
         <div class="schedule-error">
           <p>Error: ${error.message}</p>
@@ -111,18 +102,17 @@ document.addEventListener('DOMContentLoaded', async () => {
       return;
     }
     
-    // Clear any existing content except the loader
+    // Clear existing content except the loader
     const loader = container.querySelector('#scheduleLoader');
     container.innerHTML = '';
     if (loader) {
       container.appendChild(loader);
     }
     
-    // Create table element
+    // Create table element with columns: ID, Type, Status, Replies, Created, Updated
     const table = document.createElement('table');
     table.className = 'schedule-table';
     
-    // Build table HTML with updated columns: ID, Type, Status, Replies, Created, Updated
     table.innerHTML = `
       <thead>
         <tr>
@@ -148,10 +138,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       </tbody>
     `;
     
-    // Append table to container
     container.appendChild(table);
     
-    // Add click event listeners to each row
+    // Add click listeners to each row
     document.querySelectorAll('.schedule-row').forEach(row => {
       row.addEventListener('click', () => {
         loadScheduleDetails(row.getAttribute('data-id'));
@@ -166,9 +155,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const scheduleDetails = document.getElementById('scheduleDetails');
     
     if (scheduleDetails && scheduleLoader && scheduleContent) {
-      // Show loader
       scheduleLoader.classList.remove('hidden');
-      // Hide the table but keep the container visible
       const table = scheduleContent.querySelector('.schedule-table');
       if (table) table.style.display = 'none';
       scheduleDetails.classList.add('hidden');
@@ -180,18 +167,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (data.status === 'Success' && data.data) {
           const schedule = data.data;
           
-          // Create back button
           const backBtn = document.createElement('button');
           backBtn.className = 'schedule-back-button';
           backBtn.innerHTML = '<i class="fas fa-arrow-left"></i> Back to schedules';
           backBtn.addEventListener('click', () => {
             scheduleDetails.classList.add('hidden');
-            // Show the table again
             const table = scheduleContent.querySelector('.schedule-table');
             if (table) table.style.display = '';
           });
           
-          // Determine schedule title based on type
           let scheduleTitle = '';
           if (schedule.type === 'troll') {
             scheduleTitle = 'Troll Lord Schedule';
@@ -199,16 +183,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             scheduleTitle = 'Bootlicking Schedule';
           }
           
-          // Create schedule header
           const header = document.createElement('div');
           header.className = 'schedule-details-header';
           header.innerHTML = `<h3>${scheduleTitle}</h3>`;
           
-          // Create schedule info section
           const info = document.createElement('div');
           info.className = 'schedule-details-info';
           
-          // Add appropriate info based on schedule type
           if (schedule.type === 'troll') {
             info.innerHTML = `
               <p><strong>Tweet:</strong> <a href="${schedule.tweetLink}" target="_blank">${schedule.tweetLink}</a></p>
@@ -229,7 +210,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             `;
           }
           
-          // Create responses section
           const responsesHeader = document.createElement('h4');
           responsesHeader.textContent = 'Responses';
           
@@ -237,14 +217,12 @@ document.addEventListener('DOMContentLoaded', async () => {
           responses.className = 'schedule-responses';
           
           if (schedule.responses && schedule.responses.length > 0) {
-            // Sort responses by number
             const sortedResponses = [...schedule.responses].sort((a, b) => a.replyNumber - b.replyNumber);
             
             sortedResponses.forEach(response => {
               const responseEl = document.createElement('div');
               responseEl.className = 'schedule-response';
               
-              // Create response header with number and status
               const responseHeader = document.createElement('div');
               responseHeader.className = 'schedule-response-header';
               responseHeader.innerHTML = `
@@ -254,7 +232,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 </span>
               `;
               
-              // Create response content
               const responseContent = document.createElement('div');
               
               if (response.success) {
@@ -288,7 +265,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             responses.innerHTML = '<div class="schedule-response">No responses yet</div>';
           }
           
-          // Assemble the details view
           scheduleDetails.innerHTML = '';
           scheduleDetails.appendChild(backBtn);
           scheduleDetails.appendChild(header);
@@ -311,7 +287,6 @@ document.addEventListener('DOMContentLoaded', async () => {
           <div class="no-schedules">Error loading schedule details: ${error.message}</div>
         `;
       } finally {
-        // Hide loader and show details
         scheduleLoader.classList.add('hidden');
         scheduleDetails.classList.remove('hidden');
       }
@@ -329,13 +304,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   
   const multipleProfilesCheckbox = document.getElementById('multipleProfiles');
   const profileUrlsInput = document.getElementById('profileUrls');
-  
   if (multipleProfilesCheckbox && profileUrlsInput) {
-    // Set initial class
     profileUrlsInput.classList.add('single-profile');
-    
     multipleProfilesCheckbox.addEventListener('change', () => {
-      // Update textarea classes and placeholder
       if (multipleProfilesCheckbox.checked) {
         profileUrlsInput.classList.remove('single-profile');
         profileUrlsInput.classList.add('multiple-profiles');
@@ -356,7 +327,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const supabaseClient = supabase.createClient(supaConfig.supabaseUrl, supaConfig.supabaseAnonKey);
     window.supabaseClient = supabaseClient;
     
-    // Check session
     const { data: { session } } = await supabaseClient.auth.getSession();
     if (!session && !window.location.pathname.endsWith("login.html")) {
       window.location.href = '/login.html';
@@ -367,15 +337,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
   
   // Timer functionality
-  const COUNTDOWN_DURATION = 900; // 15 minutes in seconds
+  const COUNTDOWN_DURATION = 900;
   const TIMER_KEY = 'submissionTimerEnd';
   const BOOTLICK_TIMER_KEY = 'bootlickSubmissionTimerEnd';
   
-  // Get both submit buttons
   const submitBtn = document.getElementById('submitBtn');
   const bootlickSubmitBtn = document.getElementById('bootlickSubmitBtn');
   
-  // Get both timer elements
   const timerEl = document.getElementById('timer');
   const bootlickTimerEl = document.getElementById('bootlickTimer');
 
@@ -385,7 +353,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const submitButton = type === 'bootlick' ? bootlickSubmitBtn : submitBtn;
     
     localStorage.setItem(timerKey, endTime);
-    
     if (submitButton) submitButton.disabled = true;
     
     updateTimer(type);
@@ -415,7 +382,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
-  // Check timers on page load
   const storedTrollEndTime = localStorage.getItem(TIMER_KEY);
   if (storedTrollEndTime && Date.now() < parseInt(storedTrollEndTime, 10)) {
     startTimer('troll', parseInt(storedTrollEndTime, 10));
@@ -433,7 +399,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Form submission - Trolling
   const trollForm = document.getElementById('tweetForm');
   const trollResponseArea = document.getElementById('responseArea');
-  
   if (trollForm) {
     trollForm.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -450,11 +415,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (submitBtn) submitBtn.disabled = true;
 
       try {
-        // Get form data
         const tweetLink = document.getElementById('tweetLink').value;
         const trollLord = document.getElementById('trollLord').checked;
         
-        // Call API
         const params = new URLSearchParams({ tweetLink, trollLord });
         const res = await fetch('/trigger', {
           method: 'POST',
@@ -470,11 +433,8 @@ document.addEventListener('DOMContentLoaded', async () => {
           return;
         }
         
-        // Display response
         if (data.data) {
-          // Standard mode response
           if (trollResponseArea) {
-            // Get Twitter Reply URL
             const replyResp = data.data.replyResponse;
             const twitterReplyId = replyResp?.data?.id || replyResp?.id || null;
             const twitterReplyUrl = twitterReplyId 
@@ -494,21 +454,18 @@ document.addEventListener('DOMContentLoaded', async () => {
             `;
           }
         } else if (data.message) {
-          // Troll Lord mode response
           if (trollResponseArea) {
             trollResponseArea.innerHTML = `
               <p style="color: #10b981; font-weight: 500;">${data.message}</p>
               ${data.scheduleId ? 
                 `<p style="margin-top: 10px;">
-                  You can <a href="#dashboard" style="color: #4361ee; text-decoration: underline;"
+                  You can <a href="#cta" style="color: #4361ee; text-decoration: underline;"
                   onclick="loadScheduleDetails('${data.scheduleId}'); return false;">track this schedule</a> in the "Active Schedules" panel.
                 </p>` : ''
               }
             `;
           }
-          // Ensure schedule panel is visible and refresh schedules after a short delay
-          const scheduleContentEl = document.getElementById('scheduleContent');
-          if (scheduleContentEl) scheduleContentEl.classList.remove('hidden');
+          document.getElementById('scheduleContent')?.classList.remove('hidden');
           setTimeout(loadSchedules, 500);
         }
         
@@ -523,7 +480,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Form submission - Bootlicking
   const bootlickForm = document.getElementById('bootlickForm');
   const bootlickResponseArea = document.getElementById('bootlickResponseArea');
-  
   if (bootlickForm) {
     bootlickForm.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -540,11 +496,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (bootlickSubmitBtn) bootlickSubmitBtn.disabled = true;
 
       try {
-        // Get form data
         const profileUrls = document.getElementById('profileUrls').value;
         const multipleProfiles = document.getElementById('multipleProfiles').checked;
         
-        // Call API
         const params = new URLSearchParams({ profileUrls, multipleProfiles });
         const res = await fetch('/bootlick', {
           method: 'POST',
@@ -560,11 +514,8 @@ document.addEventListener('DOMContentLoaded', async () => {
           return;
         }
         
-        // Display response
         if (data.data) {
-          // Standard mode response (single profile)
           if (bootlickResponseArea) {
-            // Get Twitter Reply URL
             const replyResp = data.data.replyResponse;
             const twitterReplyId = replyResp?.data?.id || replyResp?.id || null;
             const twitterReplyUrl = twitterReplyId 
@@ -585,22 +536,19 @@ document.addEventListener('DOMContentLoaded', async () => {
             `;
           }
         } else if (data.message) {
-          // Multiple profiles mode response
           if (bootlickResponseArea) {
             const statusColor = data.status === "Warning" ? "#f59e0b" : "#10b981";
             bootlickResponseArea.innerHTML = `
               <p style="color: ${statusColor}; font-weight: 500;">${data.message}</p>
               ${data.scheduleId ? 
                 `<p style="margin-top: 10px;">
-                  You can <a href="#dashboard" style="color: #4361ee; text-decoration: underline;"
+                  You can <a href="#cta" style="color: #4361ee; text-decoration: underline;"
                   onclick="loadScheduleDetails('${data.scheduleId}'); return false;">track this schedule</a> in the "Active Schedules" panel.
                 </p>` : ''
               }
             `;
           }
-          // Ensure schedule panel is visible and refresh schedules after a short delay
-          const scheduleContentEl = document.getElementById('scheduleContent');
-          if (scheduleContentEl) scheduleContentEl.classList.remove('hidden');
+          document.getElementById('scheduleContent')?.classList.remove('hidden');
           setTimeout(loadSchedules, 500);
         }
         
@@ -616,7 +564,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   window.toggleLogs = function() {
     const content = document.getElementById('logContent');
     const icon = document.getElementById('logToggleIcon');
-    
     if (content && icon) {
       content.classList.toggle('hidden');
       icon.style.transform = content.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
@@ -666,6 +613,17 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   setInterval(debouncedPollLogs, CONFIG.POLL_INTERVAL);
   debouncedPollLogs();
+
+  // Periodically refresh schedule table if schedule panel is visible
+  const scheduleSection = document.querySelector('.schedule-tracking-section');
+  if (scheduleSection) {
+    setInterval(() => {
+      const scheduleContent = document.getElementById('scheduleContent');
+      if (scheduleContent && !scheduleContent.classList.contains('hidden')) {
+        loadSchedules();
+      }
+    }, CONFIG.POLL_INTERVAL);
+  }
 
   console.log("Page loaded, loading schedules");
   setTimeout(loadSchedules, 1000);
