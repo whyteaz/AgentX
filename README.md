@@ -1,119 +1,135 @@
-# AI Trolling Agent
+# AgentX - AI-Powered Twitter Automation Tool
 
-**Troll Like a Pro, Log Like a Boss — Powered by AI and Blockchain!**
+AgentX is a web application that uses AI to generate and automate Twitter interactions. It offers two primary functions:
 
-####Disclaimer: I am not a coder and this repo might trigger some senior dev that enjoy clean code and best practices. Please be kind.
-
-## Overview
-
-The AI Trolling Agent is a cutting-edge application that uses Google Gemini to generate witty, savage replies to tweets and logs every action on the NEAR blockchain. It features two modes:
-
-- **Standard Mode:** Generate one reply per request with a 15-minute cooldown. Sit back and wait—if your tweet hits the milestone, HOT tokens might be coming your way!
-- **Troll Lord Mode:** Automatically schedule 10 successive replies (every 16 minutes) to a target tweet.
-
-Additionally, the app monitors Twitter mentions. When your bot is mentioned, it generates a troll response and follows the user—making every interaction both mischievous and memorable.
+1. **Trolling-as-a-Service**: Generates witty, provocative responses to tweets
+2. **Bootlicking-as-a-Service**: Creates excessively flattering replies to users' latest tweets
 
 ## Features
 
-- **AI-Powered Replies:** Uses Google Gemini to generate creative, spicy responses.
-- **Blockchain Logging:** Every reply is immutably logged on the NEAR blockchain.
-- **Twitter Integration:** Fetches tweet details, replies, and monitors mentions.
-- **HOT Token Rewards:** Optionally integrate your HOT wallet to earn rewards if your tweet meets a milestone.
-- **Mischievous UI:** A sleek frontend with dark mode and collapsible sections for testing transfers and viewing server logs.
+### Trolling Agent
+- **Standard Mode**: Generate a single troll reply to any tweet
+- **Troll Lord Mode**: Schedule 10 successive replies to a tweet (one every 16 minutes)
 
-## Prerequisites
+### Bootlicking Agent
+- **Standard Mode**: Generate a flattering reply to a user's latest tweet
+- **Multiple Profiles Mode**: Schedule replies to multiple Twitter profiles consecutively
 
-Before running the app locally, ensure you have the following installed:
+### Dashboard
+- View and track all scheduled reply tasks
+- Monitor task status (active, completed, failed)
+- See detailed logs of all system activities
+- View response history for each scheduled task
 
-- [Node.js](https://nodejs.org/en/) (v14 or higher)
-- [npm](https://www.npmjs.com/)
+### User Authentication
+- Secure login/signup system via Supabase
+- Protected routes requiring authentication
 
-## Setup
+## Technical Stack
 
-### 1. Clone the Repository
+- **Backend**: Node.js, Express
+- **Frontend**: HTML, CSS, JavaScript with fullPage.js
+- **AI**: Google Gemini API
+- **API Integration**: Twitter API V2
+- **Authentication**: Supabase, JWT
+- **Monitoring**: Azure Application Insights for logging
 
-Open your terminal and run:
-```
-git clone https://github.com/yourusername/toas.git
-cd toas
-```
-### 2. Install Dependencies
+## Setup Instructions
 
-Install the required Node.js packages by running:
-```
-npm install
-```
-### 3. Configure Environment Variables
+### Prerequisites
+- Node.js (v14+)
+- NPM or Yarn
+- Twitter Developer Account with API keys
+- Google Gemini API key
+- Supabase account and project
+- Azure Application Insights account (optional for logging)
 
-Create a .env file in the root directory of the project with the following variables (replace placeholder values with your own credentials):
+### Environment Variables
+
+Create a `.env` file in the root directory with the following variables:
+
 ```
 PORT=3000
-NEAR_ACCOUNT_ID=your_near_account.testnet
-NEAR_PRIVATE_KEY=your_near_private_key
-NEAR_NETWORK=testnet
-CONTRACT_ID=your_contract_id
-GEMINI_API_KEY=your_google_gemini_api_key
+
+# Google Gemini API
+GEMINI_API_KEY=your_gemini_api_key
+
+# Twitter API (Main trolling account)
 TWITTER_API_KEY=your_twitter_api_key
 TWITTER_API_SECRET=your_twitter_api_secret
 TWITTER_ACCESS_TOKEN=your_twitter_access_token
 TWITTER_ACCESS_SECRET=your_twitter_access_secret
-HOT_OMNI_API_KEY=your_hot_omni_api_key  # if applicable
+
+# Twitter API (Bootlicking account)
+TWITTER_BOOTLICK_API_KEY=your_bootlick_twitter_api_key
+TWITTER_BOOTLICK_API_SECRET=your_bootlick_twitter_api_secret
+TWITTER_BOOTLICK_ACCESS_TOKEN=your_bootlick_twitter_access_token
+TWITTER_BOOTLICK_ACCESS_SECRET=your_bootlick_twitter_access_secret
+
+# Supabase Configuration
+SUPABASE_URL=your_supabase_url
+SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_KEY=your_supabase_service_key
+SUPABASE_JWT_SECRET=your_supabase_jwt_secret
+
+# Azure Application Insights (optional)
+AZURE_APPLICATION_INSIGHTS_CONNECTION_STRING=your_azure_insights_connection_string
 ```
-## Running Locally
 
-To start the server locally, run:
-```
-npm start
-```
-For development with auto-reload, run:
-```
-npm run dev
-```
-The server will start on http://localhost:3000.
+### Installation
 
-## How It Works
+1. Clone the repository:
+   ```
+   git clone <repository-url>
+   cd toas
+   ```
 
-### Standard Mode
-Paste & Submit:
-Paste a tweet link and (optionally) your HOT wallet address.
-Generate & Reply:
-Hit submit and watch our AI conjure a spicy comeback.
-Blockchain Logging:
-Your reply is unleashed on Twitter and immortalized on the NEAR blockchain.
-Sit Back & Wait:
-If your tweet hits the milestone, HOT tokens might be coming your way!
-Cooldown:
-Wait 15 minutes before you can strike again.
+2. Install dependencies:
+   ```
+   npm install
+   ```
 
-### Troll Lord Mode
-Ascend to Troll Lord:
-Check the "Enable Troll Lord Mode" checkbox.
-Multi-Attack:
-The AI immediately replies to the target tweet and schedules nine additional savage replies at 16-minute intervals.
-Immutable Proof:
-Every reply is logged on the NEAR blockchain—proof that your trolling is legendary.
+3. Start the server:
+   ```
+   npm run dev
+   ```
 
-### Mentions Monitoring
-The server polls Twitter every 15 minutes for mentions.
-When your bot is mentioned, it generates a troll response, replies to the mention, and follows the user who mentioned you.
+4. Access the application:
+   ```
+   http://localhost:3000
+   ```
 
-## Troubleshooting
-### Rate Limit Errors:
-If you encounter a 429 error ("Too Many Requests") from Twitter, the app logs the error with a human-readable timestamp. This indicates you've hit your daily request quota; you might need to reduce polling frequency or wait until the limit resets.
+## Usage
 
-### Environment Variables:
-Double-check your .env file to ensure all required API keys and credentials are correctly set.
+### Authentication
+1. Visit the login page at `/login.html`
+2. Sign up for a new account or log in with existing credentials
 
-### Port Issues:
-If the app does not start on port 3000, check if that port is already in use or adjust the PORT variable in your .env file.
+### Trolling Feature
+1. Navigate to the "Troll" section
+2. Enter a tweet URL in the format: `https://twitter.com/username/status/1234567890`
+3. Toggle "Troll Lord Mode" if you want to schedule multiple replies
+4. Click "Generate Troll Response"
 
-## Contributing
-Contributions are welcome! Feel free to fork this repository, implement improvements, and submit pull requests. For significant changes, please open an issue first to discuss your ideas.
+### Bootlicking Feature
+1. Navigate to the "Bootlick" section
+2. Enter a Twitter profile URL: `https://twitter.com/username`
+3. Toggle "Multiple Profiles Mode" to input multiple profiles (one per line)
+4. Click "Generate Bootlicking Response"
+
+### Dashboard
+1. Navigate to the "Dashboard" section
+2. View "Queued Schedules" to track scheduled reply tasks
+3. Check "Server Logs" for system activity
+
+## Rate Limiting
+
+- Standard mode operations have a 15-minute cooldown between uses
+- Scheduled replies are sent every 16 minutes to avoid Twitter rate limits
 
 ## License
-This project is licensed under the MIT License. See the LICENSE file for details.
+ISC
 
-
-
-Happy trolling and remember: Troll like a pro, log like a boss! 😎🔥
-
+## Notes
+- This project was created as a hackathon submission
+- Use responsibly and in accordance with Twitter's terms of service
