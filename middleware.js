@@ -9,7 +9,12 @@ function requireAuth(req, res, next) {
     return res.redirect("/login.html");
   }
   try {
-    jwt.verify(token, config.supabaseJwtSecret);
+    // Verify and decode the token
+    const decoded = jwt.verify(token, config.supabaseJwtSecret);
+    
+    // Store user ID in request object for use in route handlers
+    req.userId = decoded.sub;
+    
     next();
   } catch (err) {
     return res.redirect("/login.html");
