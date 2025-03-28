@@ -3,7 +3,7 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 const { log } = require("./logger");
 require("dotenv").config();
 
-const MAX_REPLY_COUNT = 10;
+const MAX_REPLY_COUNT = 3;
 const REPLY_INTERVAL_MS = 16 * 60 * 1000;
 
 log("info", "Initializing Google Gemini API...");
