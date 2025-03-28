@@ -1052,3 +1052,28 @@ button:disabled {
 .modern-select option {
   padding: 10px;
 }
+
+/* Navigation improvements for better visibility */
+.nav-links a {
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  font-weight: 600;
+}
+
+/* Specific improvements for Section 3 */
+#section3 nav {
+  background-color: rgba(0, 0, 0, 0.25);
+}
+
+#section3 .nav-links a {
+  color: rgba(255, 255, 255, 0.95);
+}
+
+#section3 .nav-links a:hover,
+#section3 .nav-links a.active {
+  color: #ffffff;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+#section3 .logo {
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
