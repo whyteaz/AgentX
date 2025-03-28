@@ -1,6 +1,7 @@
 const { replyTweet, fetchTweet, fetchLatestTweet } = require("./twitter");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const { log } = require("./logger");
+const azureOpenAI = require("./azure-openai");
 require("dotenv").config();
 
 const MAX_REPLY_COUNT = 10;
@@ -9,16 +10,21 @@ const REPLY_INTERVAL_MS = 16 * 60 * 1000;
 log("info", "Initializing Google Gemini API...");
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
+const SYSTEM_INSTRUCTIONS = {
+  troll: "Your task is to troll internet strangers on twitter. Please respond to the original tweet by trolling the poster. Your troll response should be as spicy as possible and not more than 280 characters. Output only the tweet response.",
+  bootlick: "Your task is to excessively praise and flatter the author of a tweet. Be extremely enthusiastic and complimentary about the tweet content. Your bootlicking response should be sycophantic but still believable and not more than 280 characters. Output only the tweet response."
+};
+
 const trollModel = genAI.getGenerativeModel({
   model: "gemini-2.0-flash-lite",
-  systemInstruction:
-    "Your task is to troll internet strangers on twitter. Please respond to the original tweet by trolling the poster. Your troll response should be as spicy as possible and not more than 280 characters. Output only the tweet response."
+  systemInstruction: SYSTEM_INSTRUCTIONS.troll
 });
+
 const bootlickModel = genAI.getGenerativeModel({
   model: "gemini-2.0-flash-lite",
-  systemInstruction:
-    "Your task is to excessively praise and flatter the author of a tweet. Be extremely enthusiastic and complimentary about the tweet content. Your bootlicking response should be sycophantic but still believable and not more than 280 characters. Output only the tweet response."
+  systemInstruction: SYSTEM_INSTRUCTIONS.bootlick
 });
+
 log("info", "Google Gemini API models initialized.");
 
 const trollStatuses = {};
@@ -39,33 +45,50 @@ async function retryOperation(operation, retries = 3, delay = 1000) {
   }
 }
 
-// Generic response generator to reduce duplicate code
-async function generateResponse(model, prompt, fallback) {
-  log("info", "Generating response with prompt:", prompt);
+// Generic response generator with multiple AI provider support
+async function generateResponse(model, prompt, fallback, aiProvider = "gemini", type = "troll") {
+  log("info", `Generating ${type} response with ${aiProvider} provider using prompt:`, prompt);
+  
   try {
-    const result = await retryOperation(() => model.generateContent(prompt));
-    const responseText = result.response.text();
+    let responseText;
+    
+    if (aiProvider === "azure") {
+      // Check if Azure OpenAI is available
+      if (!azureOpenAI.isAvailable()) {
+        log("warn", "Azure OpenAI not configured, falling back to Gemini");
+        responseText = await generateResponse(model, prompt, fallback, "gemini", type);
+      } else {
+        // For Azure OpenAI
+        const systemPrompt = SYSTEM_INSTRUCTIONS[type];
+        responseText = await azureOpenAI.generateResponse(prompt, systemPrompt);
+      }
+    } else {
+      // Default to Gemini
+      const result = await retryOperation(() => model.generateContent(prompt));
+      responseText = result.response.text();
+    }
+    
     log("info", "Response received:", responseText);
     return responseText;
   } catch (error) {
-    log("error", "Error calling Google Gemini API:", error);
+    log("error", `Error calling ${aiProvider} API:`, error);
     return fallback;
   }
 }
 
-async function generateTrollResponse(tweetContent) {
-  const prompt = `Generate a trolling response for this tweet: "${tweetContent}"`;
-  return generateResponse(trollModel, prompt, "This tweet is by AI");
+async function generateTrollResponse(tweetContent, aiProvider = "gemini") {
+  const prompt = `Generate a trolling response for this tweet: "${tweetContent}". Your output should not be more than 280 characters.`;
+  return generateResponse(trollModel, prompt, "This tweet is by AI", aiProvider, "troll");
 }
 
-async function generateBootlickResponse(tweetContent, username) {
-  const prompt = `Generate a bootlicking response for this tweet by ${username}: "${tweetContent}"`;
-  return generateResponse(bootlickModel, prompt, "This is amazing! You're the best!");
+async function generateBootlickResponse(tweetContent, username, aiProvider = "gemini") {
+  const prompt = `Generate a bootlicking response for this tweet by ${username}: "${tweetContent}". Your output should not be more than 280 characters.`;
+  return generateResponse(bootlickModel, prompt, "This is amazing! You're the best!", aiProvider, "bootlick");
 }
 
 // Process a tweet by extracting the tweet ID, generating a troll reply, and replying
-async function runAgent(tweetLink, replyCount) {
-  log("info", "Received tweet link:", tweetLink);
+async function runAgent(tweetLink, replyCount, aiProvider = "gemini") {
+  log("info", `Received tweet link: ${tweetLink}, using AI provider: ${aiProvider}`);
   const tweetIdMatch = tweetLink.match(/status\/(\d+)/);
   if (!tweetIdMatch) throw new Error("Invalid tweet link format.");
   const tweetId = tweetIdMatch[1];
@@ -76,7 +99,7 @@ async function runAgent(tweetLink, replyCount) {
   const tweetContent = tweetData.text;
   log("info", "Fetched tweet content:", tweetContent);
 
-  let trollResponse = await generateTrollResponse(tweetContent) || "Hi (This tweet is by AI)";
+  let trollResponse = await generateTrollResponse(tweetContent, aiProvider) || "Hi (This tweet is by AI)";
   if (replyCount !== undefined) trollResponse += ` (#${replyCount})`;
   log("info", "Generated troll response:", trollResponse);
 
@@ -86,8 +109,8 @@ async function runAgent(tweetLink, replyCount) {
 }
 
 // Process a profile by extracting username, fetching its latest tweet, generating a bootlick reply, and replying
-async function runBootlickAgent(profileUrl, replyCount) {
-  log("info", "Received profile URL:", profileUrl);
+async function runBootlickAgent(profileUrl, replyCount, aiProvider = "gemini") {
+  log("info", `Received profile URL: ${profileUrl}, using AI provider: ${aiProvider}`);
   const usernameMatch = profileUrl.match(/(?:twitter\.com|x\.com)\/([^/]+)/);
   if (!usernameMatch) throw new Error("Invalid profile URL format.");
   const username = usernameMatch[1];
@@ -100,7 +123,7 @@ async function runBootlickAgent(profileUrl, replyCount) {
     tweetContent = latestTweet.text;
   log("info", "Fetched latest tweet:", tweetContent);
 
-  let bootlickResponse = await generateBootlickResponse(tweetContent, username) || "This is amazing! You're the best!";
+  let bootlickResponse = await generateBootlickResponse(tweetContent, username, aiProvider) || "This is amazing! You're the best!";
   if (replyCount !== undefined) bootlickResponse += ` (#${replyCount})`;
   log("info", "Generated bootlick response:", bootlickResponse);
 
@@ -109,9 +132,9 @@ async function runBootlickAgent(profileUrl, replyCount) {
   return { profileUrl, username, tweetId, tweetContent, bootlickResponse, replyResponse };
 }
 
-async function replyToMention(tweetId, tweetText) {
-  log("info", `Agent replying to mention. Tweet ID: ${tweetId} | Text: ${tweetText}`);
-  const trollResponse = await generateTrollResponse(tweetText) || "Hi (This tweet is by AI)";
+async function replyToMention(tweetId, tweetText, aiProvider = "gemini") {
+  log("info", `Agent replying to mention. Tweet ID: ${tweetId} | Text: ${tweetText} | Provider: ${aiProvider}`);
+  const trollResponse = await generateTrollResponse(tweetText, aiProvider) || "Hi (This tweet is by AI)";
   const replyResponse = await replyTweet(tweetId, trollResponse);
   log("info", "Agent reply response:", replyResponse);
   return replyResponse;
@@ -138,12 +161,13 @@ async function scheduleReplies({
   totalReplies,
   schedule,
   statusStore,
-  statusKey
+  statusKey,
+  aiProvider = "gemini"
 }) {
   let count = 1, index = 0;
 
   const processReply = async (target, count) => {
-    const result = await replyFunction(target, count);
+    const result = await replyFunction(target, count, aiProvider);
     return composeResponse(result, count, target, type);
   };
 
@@ -208,7 +232,7 @@ async function scheduleReplies({
   return { scheduleId: schedule.id, totalReplies };
 }
 
-async function scheduleTrollReplies(tweetLink, userId) {
+async function scheduleTrollReplies(tweetLink, userId, aiProvider = "gemini") {
   const scheduleId = "sch-" + Date.now();
   const schedule = {
     id: scheduleId,
@@ -220,7 +244,8 @@ async function scheduleTrollReplies(tweetLink, userId) {
     status: "active",
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
-    userId: userId
+    userId: userId,
+    aiProvider
   };
   schedules[scheduleId] = schedule;
   trollStatuses[tweetLink] = [];
@@ -232,11 +257,12 @@ async function scheduleTrollReplies(tweetLink, userId) {
     totalReplies: MAX_REPLY_COUNT,
     schedule,
     statusStore: trollStatuses,
-    statusKey: tweetLink
+    statusKey: tweetLink,
+    aiProvider
   });
 }
 
-async function scheduleBootlickReplies(profileUrls, userId) {
+async function scheduleBootlickReplies(profileUrls, userId, aiProvider = "gemini") {
   const profiles = profileUrls.split("\n").filter((url) => url.trim());
   if (!profiles.length) throw new Error("No valid profile URLs provided");
   const scheduleId = "sch-" + Date.now();
@@ -250,7 +276,8 @@ async function scheduleBootlickReplies(profileUrls, userId) {
     status: "active",
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
-    userId: userId
+    userId: userId,
+    aiProvider
   };
   schedules[scheduleId] = schedule;
   const statusKey = profiles.join("|");
@@ -262,11 +289,12 @@ async function scheduleBootlickReplies(profileUrls, userId) {
     totalReplies: profiles.length,
     schedule,
     statusStore: bootlickStatuses,
-    statusKey: statusKey
+    statusKey: statusKey,
+    aiProvider
   });
 }
 
-async function pollMentions(pollInterval = 24 * 60 * 60 * 1000) {
+async function pollMentions(pollInterval = 24 * 60 * 60 * 1000, aiProvider = "gemini") {
   const { fetchMentions } = require("./twitter");
   try {
     log("info", "Checking for mentions...");
@@ -274,15 +302,15 @@ async function pollMentions(pollInterval = 24 * 60 * 60 * 1000) {
     if (mentions && mentions.length > 0) {
       const mention = mentions[0];
       log("info", `Mention detected: ${mention.text}`);
-      await replyToMention(mention.id, mention.text);
+      await replyToMention(mention.id, mention.text, aiProvider);
     } else {
       log("info", "No new mentions.");
     }
-    setTimeout(() => pollMentions(24 * 60 * 60 * 1000), pollInterval);
+    setTimeout(() => pollMentions(24 * 60 * 60 * 1000, aiProvider), pollInterval);
   } catch (error) {
     log("error", "Error during mention polling:", error);
     const newInterval = Math.min(pollInterval * 2, 24 * 60 * 60 * 1000 * 4);
-    setTimeout(() => pollMentions(newInterval), newInterval);
+    setTimeout(() => pollMentions(newInterval, aiProvider), newInterval);
   }
 }
 
