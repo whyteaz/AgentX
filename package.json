@@ -12,9 +12,12 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@azure/core-auth": "^1.9.0",
+    "@azure/openai": "^2.0.0",
     "@google/generative-ai": "^0.22.0",
     "@supabase/supabase-js": "^2.49.3",
     "applicationinsights": "^3.6.0",
+    "axios": "^1.8.4",
     "cookie-parser": "^1.4.7",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",

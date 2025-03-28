@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Trolling Agent</title>
+  <title>Agent X</title>
   <!-- Import Inter font -->
   <link href="https://api.fontshare.com/v2/css?f[]=satoshi@900,700,500,400&display=swap" rel="stylesheet">
   <!-- fullPage.js CSS -->
@@ -76,6 +76,13 @@
                   <label class="remove-margin" for="trollLord">Enable Troll Lord Mode</label>
                   <img id="trolllordImg" src="assets/trolllord.png" alt="Troll Lord" class="hidden">
                 </div>
+                <div class="form-group">
+                  <label for="aiProvider">AI Model</label>
+                  <select id="aiProvider" name="aiProvider" class="modern-select">
+                    <option value="gemini">Google Gemini</option>
+                    <option value="azure" id="azureOption" selected>Azure OpenAI</option>
+                  </select>
+                </div>
                 <button type="submit" id="submitBtn">Generate Troll Response</button>
                 <div id="timer"></div>
               </form>
@@ -122,6 +129,13 @@
                 <div class="form-group checkbox">
                   <input type="checkbox" id="multipleProfiles" name="multipleProfiles">
                   <label class="remove-margin" for="multipleProfiles">Enable Multiple Profiles Mode</label>
+                </div>
+                <div class="form-group">
+                  <label for="bootlickAiProvider">AI Model</label>
+                  <select id="bootlickAiProvider" name="bootlickAiProvider" class="modern-select">
+                    <option value="gemini">Google Gemini</option>
+                    <option value="azure" id="bootlickAzureOption" selected>Azure OpenAI</option>
+                  </select>
                 </div>
                 <button type="submit" id="bootlickSubmitBtn">Generate Bootlicking Response</button>
                 <div id="bootlickTimer"></div>
