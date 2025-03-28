@@ -11,8 +11,8 @@ log("info", "Initializing Google Gemini API...");
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 const SYSTEM_INSTRUCTIONS = {
-  troll: "Your task is to troll internet strangers on twitter. Please respond to the original tweet by trolling the poster. Your troll response should be as spicy as possible and not more than 280 characters. Output only the tweet response.",
-  bootlick: "Your task is to excessively praise and flatter the author of a tweet. Be extremely enthusiastic and complimentary about the tweet content. Your bootlicking response should be sycophantic but still believable and not more than 280 characters. Output only the tweet response."
+  troll: "Your task is to troll internet strangers on twitter. Your response MUST be UNDER 280 CHARACTERS - this is a strict Twitter limit. Please respond to the original tweet by trolling the poster. Your troll response should be as spicy as possible. Output only the tweet response.",
+  bootlick: "Your task is to excessively praise and flatter the author of a tweet. Your response MUST be UNDER 280 CHARACTERS - this is a strict Twitter limit. Be extremely enthusiastic and complimentary about the tweet content. Your bootlicking response should be sycophantic but still believable. Output only the tweet response."
 };
 
 const trollModel = genAI.getGenerativeModel({
@@ -77,12 +77,12 @@ async function generateResponse(model, prompt, fallback, aiProvider = "gemini", 
 }
 
 async function generateTrollResponse(tweetContent, aiProvider = "gemini") {
-  const prompt = `Generate a trolling response for this tweet: "${tweetContent}". Your output should not be more than 280 characters.`;
+  const prompt = `Generate a trolling response for this tweet: "${tweetContent}". Response MUST be under 280 characters.`;
   return generateResponse(trollModel, prompt, "This tweet is by AI", aiProvider, "troll");
 }
 
 async function generateBootlickResponse(tweetContent, username, aiProvider = "gemini") {
-  const prompt = `Generate a bootlicking response for this tweet by ${username}: "${tweetContent}". Your output should not be more than 280 characters.`;
+  const prompt = `Generate a bootlicking response for this tweet by ${username}: "${tweetContent}". Response MUST be under 280 characters.`;
   return generateResponse(bootlickModel, prompt, "This is amazing! You're the best!", aiProvider, "bootlick");
 }
 
