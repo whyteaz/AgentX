@@ -21,7 +21,9 @@ const router = express.Router();
 router.get("/api/config", (req, res) => {
   res.json({
     supabaseUrl: config.supabaseUrl,
-    supabaseAnonKey: config.supabaseAnonKey
+    supabaseAnonKey: config.supabaseAnonKey,
+    // Let the frontend know if Azure OpenAI is available
+    azureOpenAIAvailable: !!(config.azureOpenAI.endpoint && config.azureOpenAI.apiKey && config.azureOpenAI.deployment)
   });
 });
 
@@ -49,16 +51,16 @@ router.get("/login.html", (req, res) => {
 // /trigger endpoint: processes requests to run the trolling agent.
 router.post("/trigger", requireAuth, async (req, res, next) => {
   try {
-    const { tweetLink, trollLord } = req.body;
+    const { tweetLink, trollLord, aiProvider = "gemini" } = req.body;
     const trollLordMode = trollLord === "true";
-    log("info", "Troll Lord mode:", trollLordMode);
+    log("info", `Troll Lord mode: ${trollLordMode}, AI Provider: ${aiProvider}`);
 
     if (!tweetLink || !/^https:\/\/(twitter\.com|x\.com)\/.*\/status\/\d+/.test(tweetLink)) {
       return res.status(400).json({ error: "Invalid tweet link provided." });
     }
 
     if (trollLordMode) {
-      const schedule = await scheduleTrollReplies(tweetLink, req.userId);
+      const schedule = await scheduleTrollReplies(tweetLink, req.userId, aiProvider);
       const schedulesForUser = getUserSchedules(req.userId);
       res.json({
         status: "Success",
@@ -67,7 +69,7 @@ router.post("/trigger", requireAuth, async (req, res, next) => {
         schedules: schedulesForUser
       });
     } else {
-      const result = await runAgent(tweetLink);
+      const result = await runAgent(tweetLink, undefined, aiProvider);
       res.json({ status: "Success", data: result });
     }
   } catch (error) {
@@ -79,9 +81,9 @@ router.post("/trigger", requireAuth, async (req, res, next) => {
 // /bootlick endpoint: processes requests to run the bootlicking agent.
 router.post("/bootlick", requireAuth, async (req, res, next) => {
   try {
-    const { profileUrls, multipleProfiles } = req.body;
+    const { profileUrls, multipleProfiles, aiProvider = "gemini" } = req.body;
     const multipleProfilesMode = multipleProfiles === "true";
-    log("info", "Multiple Profiles mode:", multipleProfilesMode);
+    log("info", `Multiple Profiles mode: ${multipleProfilesMode}, AI Provider: ${aiProvider}`);
 
     if (!profileUrls || profileUrls.trim() === "") {
       return res.status(400).json({ error: "No profile URLs provided." });
@@ -95,10 +97,10 @@ router.post("/bootlick", requireAuth, async (req, res, next) => {
             "Invalid profile URL format. Should be like: https://twitter.com/username"
         });
       }
-      const result = await runBootlickAgent(profileUrl);
+      const result = await runBootlickAgent(profileUrl, undefined, aiProvider);
       res.json({ status: "Success", data: result });
     } else {
-      const result = await scheduleBootlickReplies(profileUrls, req.userId);
+      const result = await scheduleBootlickReplies(profileUrls, req.userId, aiProvider);
       const schedulesForUser = getUserSchedules(req.userId);
       if (result.firstError) {
         res.json({

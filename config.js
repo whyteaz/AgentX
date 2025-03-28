@@ -19,6 +19,13 @@ const requiredEnvVars = [
   "AZURE_APPLICATION_INSIGHTS_CONNECTION_STRING"
 ];
 
+// Optional env vars for Azure OpenAI
+const optionalEnvVars = [
+  "AZURE_OPENAI_ENDPOINT",
+  "AZURE_OPENAI_API_KEY",
+  "AZURE_OPENAI_DEPLOYMENT"
+];
+
 requiredEnvVars.forEach((key) => {
   if (!process.env[key]) {
     throw new Error(`Missing required environment variable: ${key}`);
@@ -44,5 +51,11 @@ module.exports = {
   supabaseServiceKey: process.env.SUPABASE_SERVICE_KEY,
   supabaseJwtSecret: process.env.SUPABASE_JWT_SECRET,
   // Azure Application Insights
-  azureAppInsightsConnectionString: process.env.AZURE_APPLICATION_INSIGHTS_CONNECTION_STRING
+  azureAppInsightsConnectionString: process.env.AZURE_APPLICATION_INSIGHTS_CONNECTION_STRING,
+  // Azure OpenAI (optional)
+  azureOpenAI: {
+    endpoint: process.env.AZURE_OPENAI_ENDPOINT,
+    apiKey: process.env.AZURE_OPENAI_API_KEY,
+    deployment: process.env.AZURE_OPENAI_DEPLOYMENT
+  }
 };

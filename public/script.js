@@ -120,6 +120,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           <th>Type</th>
           <th>Status</th>
           <th>Replies</th>
+          <th>AI Provider</th>
           <th>Created</th>
           <th>Updated</th>
         </tr>
@@ -131,6 +132,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             <td>${schedule.type}</td>
             <td><span class="status-badge status-${schedule.status.toLowerCase()}">${schedule.status}</span></td>
             <td>${schedule.completedReplies}/${schedule.totalReplies}</td>
+            <td>${schedule.aiProvider || 'gemini'}</td>
             <td>${formatDate(schedule.createdAt)}</td>
             <td>${formatDate(schedule.updatedAt)}</td>
           </tr>
@@ -196,6 +198,7 @@ document.addEventListener('DOMContentLoaded', async () => {
               <p><strong>Created:</strong> ${formatDate(schedule.createdAt)}</p>
               <p><strong>Status:</strong> ${schedule.status}</p>
               <p><strong>Progress:</strong> ${schedule.completedReplies}/${schedule.totalReplies}</p>
+              <p><strong>AI Provider:</strong> ${schedule.aiProvider || 'gemini'}</p>
             `;
           } else if (schedule.type === 'bootlick') {
             const profileLinks = schedule.profileUrls.map(url => 
@@ -207,6 +210,7 @@ document.addEventListener('DOMContentLoaded', async () => {
               <p><strong>Created:</strong> ${formatDate(schedule.createdAt)}</p>
               <p><strong>Status:</strong> ${schedule.status}</p>
               <p><strong>Progress:</strong> ${schedule.completedReplies}/${schedule.totalReplies}</p>
+              <p><strong>AI Provider:</strong> ${schedule.aiProvider || 'gemini'}</p>
             `;
           }
           
@@ -327,6 +331,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     const supabaseClient = supabase.createClient(supaConfig.supabaseUrl, supaConfig.supabaseAnonKey);
     window.supabaseClient = supabaseClient;
     
+    // Check Azure OpenAI availability and update UI accordingly
+    const azureOption = document.getElementById('azureOption');
+    const bootlickAzureOption = document.getElementById('bootlickAzureOption');
+    
+    if (!supaConfig.azureOpenAIAvailable) {
+      if (azureOption) {
+        azureOption.disabled = true;
+        azureOption.text = "Azure OpenAI (Not configured)";
+        // Fall back to Gemini if Azure is unavailable
+        document.getElementById('aiProvider').value = "gemini";
+      }
+      if (bootlickAzureOption) {
+        bootlickAzureOption.disabled = true;
+        bootlickAzureOption.text = "Azure OpenAI (Not configured)";
+        document.getElementById('bootlickAiProvider').value = "gemini";
+      }
+    }
+    
     const { data: { session } } = await supabaseClient.auth.getSession();
     if (!session && !window.location.pathname.endsWith("login.html")) {
       window.location.href = '/login.html';
@@ -417,8 +439,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       try {
         const tweetLink = document.getElementById('tweetLink').value;
         const trollLord = document.getElementById('trollLord').checked;
+        const aiProvider = document.getElementById('aiProvider').value;
         
-        const params = new URLSearchParams({ tweetLink, trollLord });
+        const params = new URLSearchParams({ tweetLink, trollLord, aiProvider });
         const res = await fetch('/trigger', {
           method: 'POST',
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -445,6 +468,7 @@ document.addEventListener('DOMContentLoaded', async () => {
               <div>
                 <p style="margin-bottom: 15px;"><strong>Trolling Response: </strong></br>${data.data.trollResponse}</p>
                 <p style="margin-bottom: 15px;"><strong>Original Tweet: </strong></br>${data.data.tweetContent}</p>
+                <p style="margin-bottom: 15px;"><strong>AI Provider: </strong></br>${aiProvider}</p>
                 <p><strong>Twitter Reply URL: </strong> ${
                   twitterReplyUrl !== "N/A"
                     ? `<a href="${twitterReplyUrl}" target="_blank" style="color: #4361ee; text-decoration: underline;"></br>${twitterReplyUrl}</a>`
@@ -457,6 +481,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           if (trollResponseArea) {
             trollResponseArea.innerHTML = `
               <p style="color: #10b981; font-weight: 500;">${data.message}</p>
+              <p style="margin-top: 10px;"><strong>AI Provider: </strong>${aiProvider}</p>
               ${data.scheduleId ? 
                 `<p style="margin-top: 10px;">
                   You can <a href="#cta" style="color: #4361ee; text-decoration: underline;"
@@ -498,8 +523,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       try {
         const profileUrls = document.getElementById('profileUrls').value;
         const multipleProfiles = document.getElementById('multipleProfiles').checked;
+        const aiProvider = document.getElementById('bootlickAiProvider').value;
         
-        const params = new URLSearchParams({ profileUrls, multipleProfiles });
+        const params = new URLSearchParams({ profileUrls, multipleProfiles, aiProvider });
         const res = await fetch('/bootlick', {
           method: 'POST',
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -527,6 +553,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <p style="margin-bottom: 15px;"><strong>Bootlicking Response: </strong></br>${data.data.bootlickResponse}</p>
                 <p style="margin-bottom: 15px;"><strong>Original Tweet: </strong></br>${data.data.tweetContent}</p>
                 <p style="margin-bottom: 15px;"><strong>Profile: </strong></br>${data.data.username}</p>
+                <p style="margin-bottom: 15px;"><strong>AI Provider: </strong></br>${aiProvider}</p>
                 <p><strong>Twitter Reply URL: </strong> ${
                   twitterReplyUrl !== "N/A"
                     ? `<a href="${twitterReplyUrl}" target="_blank" style="color: #4361ee; text-decoration: underline;"></br>${twitterReplyUrl}</a>`
@@ -540,6 +567,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const statusColor = data.status === "Warning" ? "#f59e0b" : "#10b981";
             bootlickResponseArea.innerHTML = `
               <p style="color: ${statusColor}; font-weight: 500;">${data.message}</p>
+              <p style="margin-top: 10px;"><strong>AI Provider: </strong>${aiProvider}</p>
               ${data.scheduleId ? 
                 `<p style="margin-top: 10px;">
                   You can <a href="#cta" style="color: #4361ee; text-decoration: underline;"
