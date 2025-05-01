@@ -12,6 +12,12 @@ const requiredEnvVars = [
   "TWITTER_BOOTLICK_API_SECRET",
   "TWITTER_BOOTLICK_ACCESS_TOKEN",
   "TWITTER_BOOTLICK_ACCESS_SECRET",
+  // Storyteller Twitter account
+  "TWITTER_STORY_API_KEY",
+  "TWITTER_STORY_API_SECRET",
+  "TWITTER_STORY_ACCESS_TOKEN",
+  "TWITTER_STORY_ACCESS_SECRET",
+  // Supabase
   "SUPABASE_URL",
   "SUPABASE_ANON_KEY",
   "SUPABASE_SERVICE_KEY",
@@ -45,6 +51,11 @@ module.exports = {
   twitterBootlickApiSecret: process.env.TWITTER_BOOTLICK_API_SECRET,
   twitterBootlickAccessToken: process.env.TWITTER_BOOTLICK_ACCESS_TOKEN,
   twitterBootlickAccessSecret: process.env.TWITTER_BOOTLICK_ACCESS_SECRET,
+  // Storyteller Twitter account
+  twitterStoryApiKey: process.env.TWITTER_STORY_API_KEY,
+  twitterStoryApiSecret: process.env.TWITTER_STORY_API_SECRET,
+  twitterStoryAccessToken: process.env.TWITTER_STORY_ACCESS_TOKEN,
+  twitterStoryAccessSecret: process.env.TWITTER_STORY_ACCESS_SECRET,
   // Supabase config
   supabaseUrl: process.env.SUPABASE_URL,
   supabaseAnonKey: process.env.SUPABASE_ANON_KEY,

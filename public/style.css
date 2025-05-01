@@ -1077,3 +1077,173 @@ button:disabled {
 #section3 .logo {
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
 }
+
+/* Section 5 - Storyteller Agent */
+#section5 {
+  background: linear-gradient(135deg, #7b2cbf 0%, #2a004f 100%); /* Purple gradient */
+  position: relative;
+  overflow: hidden;
+}
+
+#section5::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.08) 0%, transparent 60%);
+  z-index: 1;
+}
+
+#section5 .content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+#section5 .section-title {
+  color: #e0c3fc; /* Light purple for title */
+}
+
+#section5 .section-title::after {
+  background-color: rgba(224, 195, 252, 0.4); /* Lighter purple underline */
+}
+
+.storyteller-container {
+  display: grid;
+  grid-template-columns: 1fr 2fr; /* Controls on left, dashboard on right */
+  gap: 30px;
+  width: 100%;
+  max-width: 1000px; /* Adjust as needed */
+  margin-top: 30px;
+}
+
+.storyteller-controls, .storyteller-dashboard {
+  background-color: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  padding: 30px;
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  text-align: left;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  color: #333; /* Dark text on light background */
+}
+
+.storyteller-controls h3, .storyteller-dashboard h3 {
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 20px;
+  color: #5e1a89; /* Darker purple for headings */
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+}
+
+.storyteller-btn {
+  background: linear-gradient(90deg, rgba(123, 44, 191, 0.8) 0%, rgba(94, 26, 137, 0.9) 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 14px 20px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  width: 100%;
+  transition: all 0.3s;
+  margin-bottom: 15px;
+  font-family: 'Satoshi', sans-serif;
+}
+
+.storyteller-btn.start-btn {
+   background: linear-gradient(90deg, rgba(94, 26, 137, 0.8) 0%, rgba(123, 44, 191, 0.9) 100%);
+}
+
+.storyteller-btn.stop-btn {
+   background: linear-gradient(90deg, rgba(200, 50, 50, 0.8) 0%, rgba(160, 30, 30, 0.9) 100%);
+}
+
+
+.storyteller-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 15px rgba(0,0,0,0.2);
+}
+
+.storyteller-btn:disabled {
+  background: linear-gradient(90deg, rgba(123, 44, 191, 0.4) 0%, rgba(94, 26, 137, 0.5) 100%);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.control-status {
+  margin-top: 15px;
+  font-size: 14px;
+  color: #555;
+  text-align: center;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* Two columns for metrics */
+  gap: 15px 25px; /* Row gap, Column gap */
+}
+
+.metric-item {
+  font-size: 15px;
+  color: #444;
+}
+
+.metric-item strong {
+  font-weight: 600;
+  color: #5e1a89; /* Darker purple */
+}
+
+.metric-item span {
+  font-weight: 500;
+  color: #333;
+}
+
+.metric-full-width {
+  grid-column: 1 / -1; /* Span across both columns */
+}
+
+.last-tweet-text {
+  margin-top: 5px;
+  font-style: italic;
+  color: #555;
+  background-color: #f8f8f8;
+  padding: 8px;
+  border-radius: 4px;
+  border: 1px solid #eee;
+  max-height: 60px; /* Limit height */
+  overflow-y: auto; /* Add scroll if needed */
+  font-size: 14px;
+}
+
+.tweet-link {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 14px;
+  color: #4361ee;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.tweet-link:hover {
+  text-decoration: underline;
+}
+
+#storytellerLoader {
+  margin-top: 20px;
+}
+
+/* Responsive adjustments for storyteller section */
+@media (max-width: 768px) {
+  .storyteller-container {
+    grid-template-columns: 1fr; /* Stack controls and dashboard */
+  }
+}

@@ -1,4 +1,4 @@
-const { replyTweet, fetchTweet, fetchLatestTweet } = require("./twitter");
+const { replyTweet, fetchTweet, fetchLatestTweet, postTweet } = require("./twitter"); // Added postTweet
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const { log } = require("./logger");
 const azureOpenAI = require("./azure-openai");
@@ -12,7 +12,8 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 const SYSTEM_INSTRUCTIONS = {
   troll: "Your task is to troll internet strangers on twitter. Your response MUST be UNDER 280 CHARACTERS - this is a strict Twitter limit. Please respond to the original tweet by trolling the poster. Your troll response should be as spicy as possible. Output only the tweet response.",
-  bootlick: "Your task is to excessively praise and flatter the author of a tweet. Your response MUST be UNDER 280 CHARACTERS - this is a strict Twitter limit. Be extremely enthusiastic and complimentary about the tweet content. Your bootlicking response should be sycophantic but still believable. Output only the tweet response."
+  bootlick: "Your task is to excessively praise and flatter the author of a tweet. Your response MUST be UNDER 280 CHARACTERS - this is a strict Twitter limit. Be extremely enthusiastic and complimentary about the tweet content. Your bootlicking response should be sycophantic but still believable. Output only the tweet response.",
+  storyteller: "You are a creative storyteller AI. Your task is to write parts of a story for a Twitter thread. If you receive no previous tweet content, start a new, intriguing story scenario in a single tweet (under 280 characters). If you receive previous tweet content, continue the story creatively from where it left off, also in a single tweet (under 280 characters). Focus on building suspense, interesting characters, or unexpected twists. Output only the tweet text."
 };
 
 const trollModel = genAI.getGenerativeModel({
@@ -23,6 +24,11 @@ const trollModel = genAI.getGenerativeModel({
 const bootlickModel = genAI.getGenerativeModel({
   model: "gemini-2.0-flash-lite",
   systemInstruction: SYSTEM_INSTRUCTIONS.bootlick
+});
+
+const storytellerModel = genAI.getGenerativeModel({
+  model: "gemini-2.0-flash-lite", // Or choose another appropriate model
+  systemInstruction: SYSTEM_INSTRUCTIONS.storyteller
 });
 
 log("info", "Google Gemini API models initialized.");
@@ -47,8 +53,8 @@ async function retryOperation(operation, retries = 3, delay = 1000) {
 
 // Generic response generator with multiple AI provider support
 async function generateResponse(model, prompt, fallback, aiProvider = "gemini", type = "troll") {
-  log("info", `Generating ${type} response with ${aiProvider} provider using prompt:`, prompt);
-  
+  log("info", `Generating ${type} response with ${aiProvider} provider using prompt: ${prompt}`); // Log the actual prompt
+
   try {
     let responseText;
     
@@ -85,6 +91,15 @@ async function generateBootlickResponse(tweetContent, username, aiProvider = "ge
   const prompt = `Generate a bootlicking response for this tweet by ${username}: "${tweetContent}". Response MUST be under 280 characters.`;
   return generateResponse(bootlickModel, prompt, "This is amazing! You're the best!", aiProvider, "bootlick");
 }
+
+async function generateStorytellerResponse(previousTweetContent = null, aiProvider = "gemini") {
+  const prompt = previousTweetContent
+    ? `Continue this story: "${previousTweetContent}" with a drastic twist. Your twist must super interesting that lead the read wanted to read more. Response MUST be under 280 characters  and dumb down to 10 years old.`
+    : "Start a new, engaging and creative story scenario. Your story must be simple to comprehensive by all ages. Your story MUST be designed specifically to captivate and increase audience engagement and views. Response MUST be under 280 characters.";
+  const fallback = "The story continues... (AI generated)";
+  return generateResponse(storytellerModel, prompt, fallback, aiProvider, "storyteller");
+}
+
 
 // Process a tweet by extracting the tweet ID, generating a troll reply, and replying
 async function runAgent(tweetLink, replyCount, aiProvider = "gemini") {
@@ -333,5 +348,186 @@ module.exports = {
   trollStatuses,
   bootlickStatuses,
   getUserSchedules,
-  getScheduleById
+  getScheduleById,
+  startStorytellerAgent, // Export control functions
+  stopStorytellerAgent,
+  getStorytellerStatus
 };
+
+// --- Storyteller Agent State & Control ---
+let storytellerState = {
+  isRunning: false,
+  timeoutId: null,
+  lastTweetId: null,
+  lastTweetText: null,
+  lastTweetTimestamp: null,
+  nextRunTime: null,
+  startTime: null,
+  postCount: 0,
+  intervalMinutes: 90, // Default interval updated to 90 minutes
+  aiProvider: "gemini", // Default provider
+  statusMessage: "Stopped"
+};
+
+// Function to actually run one iteration of the storyteller logic
+async function runStorytellerIteration() {
+  if (!storytellerState.isRunning) {
+    log("info", "Storyteller iteration called but agent is stopped.");
+    return; 
+  }
+
+  log("info", "Storyteller agent: Running iteration.");
+  storytellerState.statusMessage = "Running iteration...";
+  let postOccurred = false;
+
+  try {
+    // Use locally stored text instead of fetching
+    const previousTweetContent = storytellerState.lastTweetText; 
+    
+    if (storytellerState.lastTweetId && !previousTweetContent) {
+        // This case should ideally not happen if state is managed correctly, 
+        // but as a fallback, reset to start a new story.
+        log("warn", `Storyteller agent: Have lastTweetId (${storytellerState.lastTweetId}) but no lastTweetText. Starting new story.`);
+        storytellerState.lastTweetId = null; 
+        storytellerState.statusMessage = "State inconsistency. Starting new story...";
+    } else if (storytellerState.lastTweetId) {
+        log("info", `Storyteller agent: Continuing story from previous tweet ID: ${storytellerState.lastTweetId}`);
+        storytellerState.statusMessage = "Continuing story...";
+    } else {
+        log("info", "Storyteller agent: No previous tweet ID/text found. Starting a new story.");
+        storytellerState.statusMessage = "Starting new story...";
+    }
+
+    // 2. Generate story part (either new or continuation)
+    log("info", "Storyteller agent: Generating story part...");
+    storytellerState.statusMessage = "Generating story part...";
+    // Pass the locally stored previousTweetContent (which might be null)
+    const storyPart = await generateStorytellerResponse(previousTweetContent, storytellerState.aiProvider); 
+    log("info", `Storyteller agent: Generated story part: "${storyPart}"`);
+
+    // 3. Post or Reply
+    let postResponse;
+    if (storytellerState.lastTweetId) {
+      // Reply to the previous tweet
+      log("info", `Storyteller agent: Replying to tweet ID: ${storytellerState.lastTweetId}`);
+      storytellerState.statusMessage = `Replying to ${storytellerState.lastTweetId}...`;
+      postResponse = await replyTweet(storytellerState.lastTweetId, storyPart, 'storyteller');
+    } else {
+      // Post a new tweet to start the story
+      log("info", "Storyteller agent: Posting new story tweet.");
+      storytellerState.statusMessage = "Posting new story tweet...";
+      postResponse = await postTweet(storyPart, 'storyteller');
+    }
+
+    // 4. Update state on successful post/reply
+    if (postResponse?.data?.id) {
+      storytellerState.lastTweetId = postResponse.data.id;
+      storytellerState.lastTweetText = storyPart; // Store the text we posted
+      storytellerState.lastTweetTimestamp = new Date().toISOString();
+      storytellerState.postCount++;
+      postOccurred = true;
+      log("info", `Storyteller agent: Successfully posted/replied. New tweet ID: ${storytellerState.lastTweetId}`);
+      storytellerState.statusMessage = `Successfully posted tweet ${storytellerState.lastTweetId}.`;
+    } else {
+      log("error", "Storyteller agent: Failed to post/reply or get new tweet ID from response.", postResponse);
+      storytellerState.statusMessage = "Failed to post/reply.";
+      // Don't update lastTweetId, will retry fetching/starting new next time
+    }
+
+  } catch (error) {
+    log("error", "Storyteller agent: Error during iteration:", error);
+    storytellerState.statusMessage = `Error during iteration: ${error.message}`;
+    // Consider more sophisticated error handling (e.g., backoff) if needed
+  } finally {
+    // 5. Schedule next iteration ONLY if still running
+    if (storytellerState.isRunning) {
+      const intervalMs = storytellerState.intervalMinutes * 60 * 1000;
+      storytellerState.nextRunTime = new Date(Date.now() + intervalMs).toISOString();
+      log("info", `Storyteller agent: Scheduling next iteration at ${storytellerState.nextRunTime}.`);
+      if (!postOccurred) { // If post failed, add message about next run
+         storytellerState.statusMessage += ` Scheduling next run at ${new Date(storytellerState.nextRunTime).toLocaleTimeString()}.`;
+      } else {
+         storytellerState.statusMessage = `Waiting for next run at ${new Date(storytellerState.nextRunTime).toLocaleTimeString()}.`;
+      }
+      storytellerState.timeoutId = setTimeout(runStorytellerIteration, intervalMs);
+    } else {
+       storytellerState.statusMessage = "Stopped.";
+       storytellerState.nextRunTime = null;
+    }
+  }
+}
+
+// Function to start the agent loop
+function startStorytellerAgent(intervalMinutes = 90, aiProvider = "gemini") { // Default interval updated to 90
+  if (storytellerState.isRunning) {
+    log("warn", "Storyteller agent is already running.");
+    return { success: false, message: "Agent already running." };
+  }
+  log("info", `Starting storyteller agent. Interval: ${intervalMinutes} minutes, Provider: ${aiProvider}`);
+  storytellerState.isRunning = true;
+  storytellerState.intervalMinutes = intervalMinutes;
+  storytellerState.aiProvider = aiProvider;
+  storytellerState.startTime = new Date().toISOString();
+  storytellerState.postCount = 0; // Reset count on start
+  storytellerState.lastTweetId = null; // Start fresh story
+  storytellerState.lastTweetText = null;
+  storytellerState.lastTweetTimestamp = null;
+  storytellerState.statusMessage = "Starting...";
+  storytellerState.nextRunTime = new Date(Date.now() + 500).toISOString(); // Indicate it will run soon
+
+  // Start the first iteration almost immediately
+  storytellerState.timeoutId = setTimeout(runStorytellerIteration, 500); 
+  
+  return { success: true, message: "Storyteller agent started." };
+}
+
+// Function to stop the agent loop
+function stopStorytellerAgent() {
+  if (!storytellerState.isRunning) {
+    log("warn", "Storyteller agent is not running.");
+    return { success: false, message: "Agent not running." };
+  }
+  log("info", "Stopping storyteller agent.");
+  storytellerState.isRunning = false;
+  if (storytellerState.timeoutId) {
+    clearTimeout(storytellerState.timeoutId);
+    storytellerState.timeoutId = null;
+  }
+  storytellerState.nextRunTime = null;
+  storytellerState.statusMessage = "Stopped.";
+  // Keep other state like postCount, lastTweetId etc. for display until next start
+  return { success: true, message: "Storyteller agent stopped." };
+}
+
+// Function to get the current status
+function getStorytellerStatus() {
+  // Calculate uptime if running
+  let uptime = null;
+  if (storytellerState.isRunning && storytellerState.startTime) {
+    const start = new Date(storytellerState.startTime);
+    const now = new Date();
+    const diffMs = now - start;
+    const hours = Math.floor(diffMs / 3600000);
+    const minutes = Math.floor((diffMs % 3600000) / 60000);
+    const seconds = Math.floor((diffMs % 60000) / 1000);
+    uptime = `${hours}h ${minutes}m ${seconds}s`;
+  }
+
+  // Construct URL for last tweet
+  const lastTweetUrl = storytellerState.lastTweetId 
+    ? `https://twitter.com/user/status/${storytellerState.lastTweetId}` // Replace 'user' if you know the storyteller username
+    : null;
+
+  return {
+    isRunning: storytellerState.isRunning,
+    postCount: storytellerState.postCount,
+    nextRunTime: storytellerState.nextRunTime ? new Date(storytellerState.nextRunTime).toLocaleString() : "N/A",
+    lastTweetText: storytellerState.lastTweetText,
+    lastTweetUrl: lastTweetUrl,
+    lastTweetTimestamp: storytellerState.lastTweetTimestamp ? new Date(storytellerState.lastTweetTimestamp).toLocaleString() : "N/A",
+    uptime: uptime || "N/A",
+    statusMessage: storytellerState.statusMessage,
+    intervalMinutes: storytellerState.intervalMinutes,
+    aiProvider: storytellerState.aiProvider
+  };
+}

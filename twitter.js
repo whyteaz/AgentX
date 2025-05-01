@@ -21,11 +21,32 @@ const twitterBootlickClient = new TwitterApi({
   accessSecret: config.twitterBootlickAccessSecret,
 });
 
+// Initialize storyteller Twitter client
+const twitterStoryClient = new TwitterApi({
+  appKey: config.twitterStoryApiKey,
+  appSecret: config.twitterStoryApiSecret,
+  accessToken: config.twitterStoryAccessToken,
+  accessSecret: config.twitterStoryAccessSecret,
+});
+
 log("info", "Twitter API clients initialized.");
+
+// Helper function to get the correct client based on type
+function getTwitterClient(clientType = 'troll') {
+  switch (clientType) {
+    case 'bootlick':
+      return twitterBootlickClient;
+    case 'storyteller':
+      return twitterStoryClient;
+    case 'troll':
+    default:
+      return twitterTrollClient;
+  }
+}
 
 // Function to post a tweet using a specific client
 async function postTweet(status, clientType = 'troll') {
-  const client = clientType === 'bootlick' ? twitterBootlickClient : twitterTrollClient;
+  const client = getTwitterClient(clientType);
   log("info", `Attempting to post tweet with ${clientType} account, status:`, status);
   try {
     const response = await client.v2.tweet(status);
@@ -39,7 +60,7 @@ async function postTweet(status, clientType = 'troll') {
 
 // Function to reply to a tweet given its tweetId
 async function replyTweet(tweetId, status, clientType = 'troll') {
-  const client = clientType === 'bootlick' ? twitterBootlickClient : twitterTrollClient;
+  const client = getTwitterClient(clientType);
   log("info", `Attempting to reply to tweet ID ${tweetId} with ${clientType} account, status:`, status);
   try {
     const response = await client.v2.tweet(status, { reply: { in_reply_to_tweet_id: tweetId } });
@@ -53,7 +74,7 @@ async function replyTweet(tweetId, status, clientType = 'troll') {
 
 // Function to fetch a tweet's details using its tweetId
 async function fetchTweet(tweetId, clientType = 'troll') {
-  const client = clientType === 'bootlick' ? twitterBootlickClient : twitterTrollClient;
+  const client = getTwitterClient(clientType);
   log("info", `Fetching tweet details for tweet ID: ${tweetId} using ${clientType} account`);
   try {
     const tweet = await client.v2.singleTweet(tweetId, {
@@ -77,7 +98,7 @@ async function fetchTweet(tweetId, clientType = 'troll') {
 
 // Function to fetch the latest tweet from a user profile
 async function fetchLatestTweet(username, clientType = 'bootlick') {
-  const client = clientType === 'bootlick' ? twitterBootlickClient : twitterTrollClient;
+  const client = getTwitterClient(clientType);
   log("info", `Fetching latest tweet for username: ${username} using ${clientType} account`);
   try {
     // Remove @ symbol if present
@@ -132,7 +153,7 @@ async function fetchLatestTweet(username, clientType = 'bootlick') {
 
 // Function to fetch mentions for the authenticated user
 async function fetchMentions(clientType = 'troll') {
-  const client = clientType === 'bootlick' ? twitterBootlickClient : twitterTrollClient;
+  const client = getTwitterClient(clientType);
   try {
     log("info", `Fetching mentions using ${clientType} account...`);
     const user = await client.v2.me();
@@ -159,7 +180,7 @@ async function fetchMentions(clientType = 'troll') {
 
 // Function to follow a user
 async function followUser(userId, clientType = 'troll') {
-  const client = clientType === 'bootlick' ? twitterBootlickClient : twitterTrollClient;
+  const client = getTwitterClient(clientType);
   log("info", `Attempting to follow user with ID: ${userId} using ${clientType} account`);
   try {
     // Simulate following user

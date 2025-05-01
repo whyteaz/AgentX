@@ -11,7 +11,10 @@ const {
   trollStatuses,
   bootlickStatuses,
   getUserSchedules,
-  getScheduleById
+  getScheduleById,
+  startStorytellerAgent, // Added storyteller functions
+  stopStorytellerAgent,
+  getStorytellerStatus
 } = require("./agent");
 const { requireAuth } = require("./middleware");
 
@@ -177,5 +180,43 @@ router.get("/bootlick-status", requireAuth, (req, res) => {
 router.get("/logs", requireAuth, (req, res) => {
   res.json({ logs: getLogs() });
 });
+
+// --- Storyteller Agent API Endpoints ---
+
+// Start the storyteller agent
+router.post("/api/storyteller/start", requireAuth, (req, res, next) => {
+  try {
+    // Optional: Allow setting interval/provider via request body in the future
+    const { intervalMinutes, aiProvider } = req.body; 
+    const result = startStorytellerAgent(intervalMinutes, aiProvider); // Use defaults if not provided
+    res.json(result);
+  } catch (error) {
+    log("error", "Error in /api/storyteller/start:", error);
+    next(error);
+  }
+});
+
+// Stop the storyteller agent
+router.post("/api/storyteller/stop", requireAuth, (req, res, next) => {
+  try {
+    const result = stopStorytellerAgent();
+    res.json(result);
+  } catch (error) {
+    log("error", "Error in /api/storyteller/stop:", error);
+    next(error);
+  }
+});
+
+// Get the storyteller agent status
+router.get("/api/storyteller/status", requireAuth, (req, res, next) => {
+  try {
+    const status = getStorytellerStatus();
+    res.json({ status: "Success", data: status });
+  } catch (error) {
+    log("error", "Error in /api/storyteller/status:", error);
+    next(error);
+  }
+});
+
 
 module.exports = router;
