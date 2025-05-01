@@ -5,6 +5,8 @@ const cookieParser = require("cookie-parser");
 const rateLimit = require("express-rate-limit");
 const config = require("./config");
 const { log } = require("./logger");
+// Removed storyteller import as it's no longer auto-started here
+// const { runStorytellerAgentLoop } = require("./agent"); 
 
 const app = express();
 app.set("trust proxy", 1); // Enable trust proxy for accurate IP detection
@@ -36,6 +38,7 @@ app.use(errorHandler);
 // Start the server.
 app.listen(config.port, () => {
   log("info", `Server running on port ${config.port}`);
+  // Storyteller agent is now started/stopped via API endpoints
   // Optionally, start polling for mentions:
   // pollMentions();
 });

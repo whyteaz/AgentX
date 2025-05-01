@@ -655,4 +655,146 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   console.log("Page loaded, loading schedules");
   setTimeout(loadSchedules, 1000);
+
+  // --- Storyteller Agent UI Logic ---
+  const startStorytellerBtn = document.getElementById('startStorytellerBtn');
+  const stopStorytellerBtn = document.getElementById('stopStorytellerBtn');
+  const storytellerControlStatus = document.getElementById('storytellerControlStatus');
+  const storytellerLoader = document.getElementById('storytellerLoader');
+  const storytellerDashboard = document.getElementById('storytellerDashboard');
+  
+  // Dashboard elements
+  const storytellerRunStatus = document.getElementById('storytellerRunStatus');
+  const storytellerPostCount = document.getElementById('storytellerPostCount');
+  const storytellerNextRun = document.getElementById('storytellerNextRun');
+  const storytellerUptime = document.getElementById('storytellerUptime');
+  const storytellerLastTweetTime = document.getElementById('storytellerLastTweetTime');
+  const storytellerLastTweetText = document.getElementById('storytellerLastTweetText');
+  const storytellerLastTweetLink = document.getElementById('storytellerLastTweetLink');
+  const storytellerCurrentStatusMsg = document.getElementById('storytellerCurrentStatusMsg');
+
+  let storytellerStatusInterval = null;
+
+  // Function to update the dashboard UI
+  function updateStorytellerDashboard(statusData) {
+    if (!statusData || typeof statusData !== 'object') {
+        console.error("Invalid status data received:", statusData);
+        // Optionally reset dashboard fields or show an error
+        storytellerRunStatus.textContent = 'Error';
+        // Reset other fields...
+        return;
+    }
+
+    storytellerRunStatus.textContent = statusData.isRunning ? 'Running' : 'Stopped';
+    storytellerRunStatus.style.color = statusData.isRunning ? '#10b981' : '#ef4444'; // Green if running, red if stopped
+    storytellerPostCount.textContent = statusData.postCount ?? '--';
+    storytellerNextRun.textContent = statusData.nextRunTime ?? 'N/A';
+    storytellerUptime.textContent = statusData.uptime ?? 'N/A';
+    storytellerLastTweetTime.textContent = statusData.lastTweetTimestamp ?? '--';
+    storytellerLastTweetText.textContent = statusData.lastTweetText ?? '--';
+    storytellerCurrentStatusMsg.textContent = statusData.statusMessage ?? '--';
+
+    if (statusData.lastTweetUrl) {
+      storytellerLastTweetLink.href = statusData.lastTweetUrl;
+      storytellerLastTweetLink.classList.remove('hidden');
+    } else {
+      storytellerLastTweetLink.classList.add('hidden');
+    }
+
+    // Enable/disable buttons based on status
+    if (startStorytellerBtn) startStorytellerBtn.disabled = statusData.isRunning;
+    if (stopStorytellerBtn) stopStorytellerBtn.disabled = !statusData.isRunning;
+  }
+
+  // Function to fetch storyteller status
+  async function fetchStorytellerStatus() {
+    if (!storytellerDashboard) return; // Don't fetch if dashboard isn't visible/present
+
+    storytellerLoader?.classList.remove('hidden');
+    try {
+      const response = await fetch('/api/storyteller/status');
+      const data = await handleApiError(response);
+      if (data.status === 'Success') {
+        updateStorytellerDashboard(data.data);
+      } else {
+        console.error("Error fetching storyteller status:", data.error || 'Unknown error');
+        storytellerControlStatus.textContent = `Error fetching status: ${data.error || 'Unknown error'}`;
+        storytellerControlStatus.style.color = '#ef4444';
+      }
+    } catch (error) {
+      console.error("Error fetching storyteller status:", error);
+      storytellerControlStatus.textContent = `Error fetching status: ${error.message}`;
+      storytellerControlStatus.style.color = '#ef4444';
+    } finally {
+       storytellerLoader?.classList.add('hidden');
+    }
+  }
+
+  // Function to start the storyteller agent
+  async function startStoryteller() {
+    if (!startStorytellerBtn || !storytellerControlStatus) return;
+    startStorytellerBtn.disabled = true;
+    stopStorytellerBtn.disabled = true; // Disable both during request
+    storytellerControlStatus.textContent = 'Starting agent...';
+    storytellerControlStatus.style.color = '#555';
+
+    try {
+      const response = await fetch('/api/storyteller/start', { method: 'POST' });
+      const data = await handleApiError(response);
+      storytellerControlStatus.textContent = data.message || 'Agent started.';
+      storytellerControlStatus.style.color = data.success ? '#10b981' : '#ef4444';
+      fetchStorytellerStatus(); // Update status immediately
+    } catch (error) {
+      storytellerControlStatus.textContent = `Error starting agent: ${error.message}`;
+      storytellerControlStatus.style.color = '#ef4444';
+      // Re-enable buttons based on last known status after a delay
+      setTimeout(fetchStorytellerStatus, 1000); 
+    }
+  }
+
+  // Function to stop the storyteller agent
+  async function stopStoryteller() {
+     if (!stopStorytellerBtn || !storytellerControlStatus) return;
+    startStorytellerBtn.disabled = true; // Disable both during request
+    stopStorytellerBtn.disabled = true;
+    storytellerControlStatus.textContent = 'Stopping agent...';
+    storytellerControlStatus.style.color = '#555';
+
+    try {
+      const response = await fetch('/api/storyteller/stop', { method: 'POST' });
+      const data = await handleApiError(response);
+      storytellerControlStatus.textContent = data.message || 'Agent stopped.';
+      storytellerControlStatus.style.color = data.success ? '#10b981' : '#ef4444';
+      fetchStorytellerStatus(); // Update status immediately
+    } catch (error) {
+      storytellerControlStatus.textContent = `Error stopping agent: ${error.message}`;
+      storytellerControlStatus.style.color = '#ef4444';
+       // Re-enable buttons based on last known status after a delay
+      setTimeout(fetchStorytellerStatus, 1000);
+    }
+  }
+
+  // Add event listeners
+  if (startStorytellerBtn) {
+    startStorytellerBtn.addEventListener('click', startStoryteller);
+  }
+  if (stopStorytellerBtn) {
+    stopStorytellerBtn.addEventListener('click', stopStoryteller);
+  }
+
+  // Initial status fetch and start polling when the page loads
+  // Check if the storyteller section elements exist before proceeding
+  if (document.getElementById('section5')) {
+      fetchStorytellerStatus(); 
+      // Poll status every 10 seconds (adjust interval as needed)
+      storytellerStatusInterval = setInterval(fetchStorytellerStatus, 10000); 
+  }
+
+  // Clear interval when navigating away (optional, depends on SPA behavior)
+  // window.addEventListener('beforeunload', () => {
+  //   if (storytellerStatusInterval) {
+  //     clearInterval(storytellerStatusInterval);
+  //   }
+  // });
+
 });
